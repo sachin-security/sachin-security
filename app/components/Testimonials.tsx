@@ -42,7 +42,7 @@ export default function Testimonials() {
   });
 
   return (
-    <section className="py-24 bg-linear-to-b from-slate-950 to-slate-900 relative overflow-hidden">
+    <section className=" bg-linear-to-b from-slate-950 to-slate-900 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute top-1/2 left-0 w-96 h-96 bg-amber-500/5 rounded-full blur-[120px]" />
       

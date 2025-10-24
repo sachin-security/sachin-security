@@ -21,7 +21,7 @@ export default function About() {
   });
 
   return (
-    <section id="about" className="py-24 bg-slate-900 relative overflow-hidden">
+    <section id="about" className="py-2 bg-slate-900 relative overflow-hidden">
       {/* Background accent */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px]" />
       

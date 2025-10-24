@@ -12,7 +12,7 @@ const industries = [
 
 export default function Industries() {
   return (
-    <section className="py-24 bg-slate-950">
+    <section className="py-24 bg-slate-950" id='industries'>
       <div className="container mx-auto px-6">
         <div className="text-center mb-16 fade-in">
           <h2 className="text-4xl md:text-5xl font-bold mb-4 text-white">

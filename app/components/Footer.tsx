@@ -1,6 +1,6 @@
 // components/Footer.tsx
 import { Shield, Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
-
+import Link from 'next/link';
 export default function Footer() {
   const expertise = [
     'Corporate Houses',
@@ -9,6 +9,10 @@ export default function Footer() {
     'Hotels | Guest Houses',
     'Banks | ATMs',
     'Detective Services'
+  ];
+
+  const aboutuslinks = [
+    'Terms and Condition'
   ];
 
   const services = [
@@ -27,31 +31,12 @@ export default function Footer() {
     <footer className="bg-slate-950 border-t border-slate-800">
       <div className="container mx-auto px-6 py-16">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-          {/* About Us Section */}
-          <div>
-            <div className="flex items-center gap-3 mb-6">
-              <Shield className="w-10 h-10 text-amber-400" />
-              <h3 className="text-xl font-bold text-white">ABOUT US</h3>
-            </div>
-            <h4 className="font-bold text-amber-400 mb-3">
-              SACHIN SECURITY SERVICES PVT. LTD.
-            </h4>
-            <div className="bg-amber-400/10 border border-amber-400/30 px-4 py-2 rounded-lg mb-4 inline-block">
-              <p className="text-amber-400 text-sm font-semibold">
-                ISO 9001:2015 Certified Company
-              </p>
-            </div>
-            <p className="text-slate-400 text-sm leading-relaxed">
-              We have our wide presence in the States of UP, MP, Gujarat, Rajasthan and UT besides the state of Gujarat.
-            </p>
-          </div>
-
           {/* Our Expertise */}
           <div>
             <h3 className="text-xl font-bold text-white mb-6">OUR EXPERTISE</h3>
             <ul className="space-y-3">
               {expertise.map((item, index) => (
-                <li key={index} className="text-slate-400 hover:text-amber-400 transition-colors cursor-pointer text-sm">
+                <li key={index} className="text-slate-400 hover:text-amber-400 transition-colors  text-sm">
                   {item}
                 </li>
               ))}
@@ -63,12 +48,27 @@ export default function Footer() {
             <h3 className="text-xl font-bold text-white mb-6">SERVICES OFFERED</h3>
             <ul className="space-y-3">
               {services.map((item, index) => (
-                <li key={index} className="text-slate-400 hover:text-amber-400 transition-colors cursor-pointer text-sm">
+                <li key={index} className="text-slate-400 hover:text-amber-400 transition-colors  text-sm">
                   {item}
                 </li>
               ))}
             </ul>
           </div>
+
+           {/* QuickLink */}
+          <div>
+            <h3 className="text-xl font-bold text-white mb-6">About</h3>
+            <div className="space-y-3 flex flex-col">
+                <Link href={'/about-us#terms&conditions'}  className="text-slate-400 hover:text-amber-400 cursor-pointer transition-colors  text-sm">
+                    Terms and Condition
+                </Link>
+                <Link href='/about-us' className="text-slate-400 hover:text-amber-400 cursor-pointer transition-colors  text-sm">
+                    About Us
+                </Link>
+            </div>
+          </div>
+
+          
 
           {/* Contact Us */}
           <div>

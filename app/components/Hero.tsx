@@ -1,5 +1,6 @@
 // components/Hero.tsx
 import { Shield, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Hero() {
   return (
@@ -30,9 +31,9 @@ export default function Hero() {
               <ArrowRight className="group-hover:translate-x-1 transition-transform" />
             </button>
             
-            <button className="border-2 text-white border-amber-400 hover:bg-amber-400/10 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:scale-105">
+            <Link href='/about-us' className="border-2 text-white border-amber-400 hover:bg-amber-400/10 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:scale-105">
               Learn More
-            </button>
+            </Link>
           </div>
         </div>
       </div>

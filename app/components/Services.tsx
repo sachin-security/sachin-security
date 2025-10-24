@@ -1,105 +1,18 @@
 // components/Services.tsx
 'use client';
-
+import services from '../data/services';
 import { useInView } from 'react-intersection-observer';
-import { ShieldCheck, Camera, Home ,Landmark, Search, Factory, Car, PartyPopper, HardHat, ShoppingBag, UserCheck, Lock, Building } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 
-const services = [
-  {
-    icon: PartyPopper,
-    title: 'Event Security',
-    image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80',
-    description: 'At Sachin Security, we develop specialized security plans specifically tailored for every special event. These plans are carried out in collaboration with event organizers, local law enforcement agencies, and emergency services, ensuring seamless coordination. Our personnel handle ticket validation, access control, and crowd management.',
-    link: 'https://sachinsecurity.co.in/event-security/'
-  },
-  {
-    icon: HardHat,
-    title: 'Construction Site Security',
-    image: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=800&q=80',
-    description: 'Check credentials of people accessing the construction site and record time of entry and departure. Report to supervisor on any fire hazards, machine or equipment malfunctioning, utility services interruption, leaking pipes and unlocked security doors. Protect the site against fire, theft, vandalism, and illegal entry.',
-    link: 'https://sachinsecurity.co.in/#'
-  },
-  {
-    icon: ShoppingBag,
-    title: 'Retail Security',
-    image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80',
-    description: 'We prioritize the client\'s requirements and consider factors such as the type of business they operate, the nature of their products or inventory, the length of time the premises remain unoccupied, the location of the establishment, and the history of offences on the premises.',
-    link: 'https://sachinsecurity.co.in/retail-security/'
-  },
-  {
-    icon: UserCheck,
-    title: 'VIP Security',
-    image: '/vip.jpg',
-    description: 'Throughout the duration of the event, our highly trained and experienced staff operate seamlessly as a cohesive team, maintaining constant vigilance and surveillance to promptly identify and respond to any security threats that may emerge.',
-    link: 'https://sachinsecurity.co.in/vip-security/'
-  },
-  {
-    icon: Lock,
-    title: 'Private Security',
-    image: 'https://images.unsplash.com/photo-1582139329536-e7284fece509?w=800&q=80',
-    description: 'Whether it be a restaurant, hotel, retail or wholesale establishment, or any other field, we possess a team of skilled personnel with extensive audit training who can provide the necessary aid. We can deploy seasoned investigators who will uncover the truth.',
-    link: 'https://sachinsecurity.co.in/#'
-  },
-  {
-    icon: Building,
-    title: 'Corporate Security Services',
-    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80',
-    description: 'We offer Corporate Security Services in Vadodara to all Corporates, offices, IT companies and Commercial Establishments. Our Security guards are fully trained. With almost 1.5 decades of experience in Corporate Security services, we understand the needs of corporate.',
-    link: 'https://sachinsecurity.co.in/corporate-security-services/'
-  },
-  {
-    icon: Camera,
-    title: 'CCTV Monitoring',
-    image: 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=800&q=80',
-    description: '24/7 surveillance with advanced monitoring systems. Professional monitoring center with trained operators providing real-time surveillance, incident detection, and immediate response coordination.',
-    link: '#'
-  },
-  {
-    icon: Search,
-    title: 'Investigation Services',
-    image: 'https://images.unsplash.com/photo-1575505586569-646b2ca898fc?w=800&q=80',
-    description: 'Professional investigation and intelligence gathering services. Our experienced investigators conduct thorough background checks, fraud investigations, and corporate due diligence with discretion and accuracy.',
-    link: '#'
-  },
-  {
-  icon: Factory, // from lucide-react
-  title: 'Industrial Security',
-  image: '/factory.jpg',
-  description: 'Specialized security solutions for manufacturing facilities, warehouses, and industrial plants. Our trained guards monitor production areas, manage access control, prevent theft, and ensure workplace safety compliance with 24/7 surveillance and regular patrol rounds.',
-  link: '#'
-},
-{
-icon: ShieldCheck, // from lucide-react
-title: 'Armed / Unarmed Guard',
-image: '/armunarm.jpg',
-description: 'Professional armed and unarmed security personnel deployed based on your specific requirements. All guards undergo rigorous training, background verification, and are licensed according to state regulations. Available for static posts and mobile assignments.',
-link: '#'
-},
-{
-icon: Home, // from lucide-react
-title: 'Gated Community',
-image: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=800&q=80',
-description: 'Comprehensive security services for residential communities, apartments, and housing societies. Our services include gate access control, visitor management, CCTV monitoring, patrolling, emergency response, and maintaining peaceful residential environment round-the-clock.',
-link: '#'
-},
-{
-icon: Landmark, // from lucide-react
-title: 'Bank Escorts',
-image: 'https://images.unsplash.com/photo-1601597111158-2fceff292cdc?w=800&q=80',
-description: 'Trained armed security personnel for cash-in-transit operations, ATM replenishment, and valuable asset transportation. Our escorts follow strict protocols, coordinate with bank officials, and ensure safe delivery with real-time tracking and communication.',
-link: '#'
-}
-];
-
-export default function Services() {
+export default function Services( {customPadding}:{customPadding:number}) {
   const { ref: headerRef, inView: headerInView } = useInView({
     triggerOnce: true,
     threshold: 0.2,
   });
 
   return (
-    <section id="services" className="py-24 bg-slate-900 relative overflow-hidden">
+    <section id="services" className={`${customPadding?'py-'+customPadding:'py-8'} bg-slate-900 relative overflow-hidden`}>
       {/* Background decoration */}
       <div className="absolute top-1/4 right-0 w-96 h-96 bg-amber-500/5 rounded-full blur-[120px]" />
       
@@ -134,8 +47,8 @@ export default function Services() {
                 }`}
                 style={{ transitionDelay: `${index * 100}ms` }}
               >
-                <a
-                  href={service.link}
+                <Link
+                  href={'/security-services/'+service.slug}
                   className="group block bg-linear-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700 hover:border-amber-400/50 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(251,191,36,0.2)] overflow-hidden h-full"
                 >
                   {/* Image Section with Zoom Effect */}
@@ -172,7 +85,7 @@ export default function Services() {
                       </svg>
                     </div>
                   </div>
-                </a>
+                </Link>
               </div>
             );
           })}
@@ -180,12 +93,12 @@ export default function Services() {
 
         {/* Call to Action */}
         <div className="text-center mt-16">
-          <a
-            href="#contact"
+          <Link
+            href="/#contact"
             className="inline-block bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(251,191,36,0.4)]"
           >
             Request a Free Consultation
-          </a>
+          </Link>
         </div>
       </div>
     </section>
