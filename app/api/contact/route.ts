@@ -2,8 +2,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCollection } from '@/app/lib/db';
 
-// GET - Fetch all support messages
+// GET - Fetch all support messagesconsole.log("Contact route loaded ✅");
+console.log("1Contact route loaded ✅");
+
 export async function GET(request: NextRequest) {
+  console.log("2Contact route loaded ✅");
+
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
