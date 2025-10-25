@@ -1,83 +1,45 @@
 // app/admin/all-jobs/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Briefcase, Filter, Calendar, MapPin, DollarSign, Users, Eye, Edit, Trash2, X } from 'lucide-react';
-
-// Sample jobs data
-const sampleJobs = [
-  {
-    id: 'JOB001',
-    title: 'Security Guard',
-    department: 'Operations',
-    location: 'Vadodara, Gujarat',
-    type: 'Full-time',
-    experience: '0-2 years',
-    salary: '₹15,000 - ₹20,000/month',
-    postedDate: '2025-01-15',
-    status: 'Active',
-    applicantsCount: 45
-  },
-  {
-    id: 'JOB002',
-    title: 'Security Supervisor',
-    department: 'Operations',
-    location: 'Multiple Locations (Gujarat)',
-    type: 'Full-time',
-    experience: '3-5 years',
-    salary: '₹25,000 - ₹35,000/month',
-    postedDate: '2025-01-10',
-    status: 'Active',
-    applicantsCount: 28
-  },
-  {
-    id: 'JOB003',
-    title: 'Female Security Guard',
-    department: 'Operations',
-    location: 'Hospitals & Malls - Vadodara',
-    type: 'Full-time',
-    experience: '0-3 years',
-    salary: '₹16,000 - ₹22,000/month',
-    postedDate: '2025-01-05',
-    status: 'Active',
-    applicantsCount: 32
-  },
-  {
-    id: 'JOB004',
-    title: 'Area Manager',
-    department: 'Management',
-    location: 'Vadodara, Gujarat',
-    type: 'Full-time',
-    experience: '5-8 years',
-    salary: '₹40,000 - ₹55,000/month',
-    postedDate: '2024-12-20',
-    status: 'Inactive',
-    applicantsCount: 15
-  },
-  {
-    id: 'JOB005',
-    title: 'Armed Security Guard',
-    department: 'Operations',
-    location: 'Banks - Multiple Cities',
-    type: 'Full-time',
-    experience: '2-4 years',
-    salary: '₹22,000 - ₹28,000/month',
-    postedDate: '2024-12-15',
-    status: 'Inactive',
-    applicantsCount: 18
-  }
-];
+import { Briefcase, Filter, Calendar, MapPin, DollarSign, Users, Eye, Edit, Trash2, Loader2 } from 'lucide-react';
 
 export default function AllJobsPage() {
-  const [jobs, setJobs] = useState(sampleJobs);
-  const [filteredJobs, setFilteredJobs] = useState(sampleJobs);
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [filteredJobs, setFilteredJobs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   
   const [filters, setFilters] = useState({
     status: 'all',
     sortBy: 'newest'
   });
+
+  // Fetch jobs on component mount
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  // Fetch all jobs from API
+  const fetchJobs = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/jobs');
+      const data = await response.json();
+      
+      if (data.success) {
+        setJobs(data.data);
+        setFilteredJobs(data.data);
+      } else {
+        console.error('Failed to fetch jobs:', data.error);
+      }
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Apply filters
   const applyFilters = () => {
@@ -110,25 +72,68 @@ export default function AllJobsPage() {
   };
 
   // Toggle job status
-  const toggleStatus = (jobId: string) => {
-    const updated = jobs.map(job => {
-      if (job.id === jobId) {
-        return { ...job, status: job.status === 'Active' ? 'Inactive' : 'Active' };
+  const toggleStatus = async (jobId: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+      
+      const response = await fetch(`/api/jobs/${jobId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Refresh jobs list
+        fetchJobs();
+      } else {
+        alert('Failed to update job status');
       }
-      return job;
-    });
-    setJobs(updated);
-    setFilteredJobs(updated);
+    } catch (error) {
+      console.error('Error updating job status:', error);
+      alert('Failed to update job status');
+    }
   };
 
   // Delete job
-  const deleteJob = (jobId: string) => {
-    if (confirm('Are you sure you want to delete this job posting?')) {
-      const updated = jobs.filter(job => job.id !== jobId);
-      setJobs(updated);
-      setFilteredJobs(updated);
+  const deleteJob = async (jobId: string) => {
+    if (!confirm('Are you sure you want to delete this job posting?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/jobs/${jobId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Refresh jobs list
+        fetchJobs();
+      } else {
+        alert('Failed to delete job');
+      }
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      alert('Failed to delete job');
     }
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-amber-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Loading jobs...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -178,7 +183,7 @@ export default function AllJobsPage() {
             <div>
               <p className="text-gray-600 text-sm mb-1">Total Applicants</p>
               <p className="text-3xl font-bold text-amber-600">
-                {jobs.reduce((sum, job) => sum + job.applicantsCount, 0)}
+                {jobs.reduce((sum, job) => sum + (job.applicantsCount || 0), 0)}
               </p>
             </div>
             <Users className="w-10 h-10 text-amber-400" />
@@ -255,7 +260,7 @@ export default function AllJobsPage() {
         {filteredJobs.map((job) => (
           <div
             key={job.id}
-            className="bg-white border border-gray-200 rounded-lg p-6 hover:border-amber-400"
+            className="bg-white border border-gray-200 rounded-lg p-6 hover:border-amber-400 transition-colors"
           >
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
               {/* Job Info */}
@@ -289,7 +294,7 @@ export default function AllJobsPage() {
                       </div>
                       <div className="flex items-center gap-2 text-gray-700">
                         <DollarSign className="w-4 h-4 text-gray-400" />
-                        <span>{job.salary}</span>
+                        <span>{job.salary || 'Not specified'}</span>
                       </div>
                       <div className="flex items-center gap-2 text-gray-700">
                         <Calendar className="w-4 h-4 text-gray-400" />
@@ -301,7 +306,7 @@ export default function AllJobsPage() {
                     <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-full">
                       <Users className="w-4 h-4 text-gray-600" />
                       <span className="text-sm font-medium text-gray-900">
-                        {job.applicantsCount} Applicants
+                        {job.applicantsCount || 0} Applicants
                       </span>
                     </div>
                   </div>
@@ -319,7 +324,7 @@ export default function AllJobsPage() {
                 </Link>
                 
                 <button
-                  onClick={() => toggleStatus(job.id)}
+                  onClick={() => toggleStatus(job.id, job.status)}
                   className={`flex-1 px-4 py-2 rounded-lg font-semibold ${
                     job.status === 'Active'
                       ? 'bg-red-100 text-red-700 hover:bg-red-200'
@@ -336,13 +341,13 @@ export default function AllJobsPage() {
                   Edit
                 </button>
                 
-                <button
+                {/* <button
                   onClick={() => deleteJob(job.id)}
                   className="flex-1 border border-red-300 text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 font-semibold flex items-center justify-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
                   Delete
-                </button>
+                </button> */}
               </div>
             </div>
           </div>

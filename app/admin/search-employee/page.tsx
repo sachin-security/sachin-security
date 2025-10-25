@@ -1,97 +1,31 @@
 // app/admin/search-employee/page.tsx
 'use client';
 
-import { useState } from 'react';
-import { Search, Filter, X, Loader2, Download, Eye, Edit, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Filter, X, Loader2, Download, Eye, Edit, Trash2, Mail } from 'lucide-react';
 
-// Sample employee data (would come from API/database)
-const sampleEmployees = [
-  {
-    employeeId: 'SS001',
-    fullName: 'Rajesh Kumar',
-    designation: 'Security Guard',
-    department: 'Operations',
-    city: 'Vadodara',
-    state: 'Gujarat',
-    gender: 'Male',
-    joiningDate: '2022-01-15',
-    mobileNumber: '+91 98765 43210',
-    email: 'rajesh.kumar@sachinsecurity.com',
-    aadharNumber: '1234 5678 9012',
-    panNumber: 'ABCDE1234F',
-    status: 'Active',
-    workLocation: 'Corporate Park, Vadodara'
-  },
-  {
-    employeeId: 'SS002',
-    fullName: 'Priya Sharma',
-    designation: 'Security Supervisor',
-    department: 'Operations',
-    city: 'Ahmedabad',
-    state: 'Gujarat',
-    gender: 'Female',
-    joiningDate: '2021-06-10',
-    mobileNumber: '+91 87654 32109',
-    email: 'priya.sharma@sachinsecurity.com',
-    aadharNumber: '2345 6789 0123',
-    panNumber: 'BCDEF2345G',
-    status: 'Active',
-    workLocation: 'Tech Mall, Ahmedabad'
-  },
-  {
-    employeeId: 'SS003',
-    fullName: 'Amit Patel',
-    designation: 'Security Guard',
-    department: 'Operations',
-    city: 'Surat',
-    state: 'Gujarat',
-    gender: 'Male',
-    joiningDate: '2023-03-20',
-    mobileNumber: '+91 76543 21098',
-    email: 'amit.patel@sachinsecurity.com',
-    aadharNumber: '3456 7890 1234',
-    panNumber: 'CDEFG3456H',
-    status: 'Active',
-    workLocation: 'Diamond Plaza, Surat'
-  },
-  {
-    employeeId: 'SS004',
-    fullName: 'Neha Singh',
-    designation: 'Security Guard',
-    department: 'Operations',
-    city: 'Vadodara',
-    state: 'Gujarat',
-    gender: 'Female',
-    joiningDate: '2023-07-12',
-    mobileNumber: '+91 65432 10987',
-    email: 'neha.singh@sachinsecurity.com',
-    aadharNumber: '4567 8901 2345',
-    panNumber: 'DEFGH4567I',
-    status: 'Active',
-    workLocation: 'City Hospital, Vadodara'
-  },
-  {
-    employeeId: 'SS005',
-    fullName: 'Vikram Mehta',
-    designation: 'Area Manager',
-    department: 'Management',
-    city: 'Vadodara',
-    state: 'Gujarat',
-    gender: 'Male',
-    joiningDate: '2020-02-01',
-    mobileNumber: '+91 54321 09876',
-    email: 'vikram.mehta@sachinsecurity.com',
-    aadharNumber: '5678 9012 3456',
-    panNumber: 'EFGHI5678J',
-    status: 'Active',
-    workLocation: 'Head Office, Vadodara'
-  }
-];
+interface Employee {
+  fullName: string;
+  employeeId: string;
+  designation: string;
+  department: string;
+  city: string;
+  state: string;
+  gender: string;
+  joiningDate: string;
+  mobileNumber: string;
+  email: string;
+  aadharNumber: string;
+  panNumber: string;
+  status: string;
+  workLocation: string;
+}
 
 export default function SearchEmployeePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchBy, setSearchBy] = useState<'name' | 'id'>('name');
   const [isSearching, setIsSearching] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -108,79 +42,85 @@ export default function SearchEmployeePage() {
     joiningDateTo: ''
   });
 
-  const [employees, setEmployees] = useState(sampleEmployees);
-  const [filteredEmployees, setFilteredEmployees] = useState(sampleEmployees);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
+
+  // Fetch all employees on load
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  // Fetch employees from API
+  const fetchEmployees = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/employees');
+      const data = await response.json();
+      
+      if (data.success) {
+        setEmployees(data.data);
+        setFilteredEmployees(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Search functionality
   const handleSearch = async () => {
     setIsSearching(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    let results = [...employees];
-    
-    if (searchQuery.trim()) {
-      if (searchBy === 'name') {
-        results = results.filter(emp => 
-          emp.fullName.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      } else {
-        results = results.filter(emp => 
-          emp.employeeId.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+    try {
+      const params = new URLSearchParams();
+      if (searchQuery.trim()) {
+        params.append('search', searchQuery);
+        params.append('searchBy', searchBy);
       }
+      
+      const response = await fetch(`/api/employees?${params.toString()}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setFilteredEmployees(data.data);
+      }
+    } catch (error) {
+      console.error('Error searching employees:', error);
+    } finally {
+      setIsSearching(false);
     }
-    
-    setFilteredEmployees(results);
-    setIsSearching(false);
   };
 
   // Apply filters
-  const applyFilters = () => {
-    let results = [...employees];
+  const applyFilters = async () => {
+    setIsSearching(true);
     
-    // Apply search first
-    if (searchQuery.trim()) {
-      if (searchBy === 'name') {
-        results = results.filter(emp => 
-          emp.fullName.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      } else {
-        results = results.filter(emp => 
-          emp.employeeId.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+    try {
+      const params = new URLSearchParams();
+      
+      if (searchQuery.trim()) {
+        params.append('search', searchQuery);
+        params.append('searchBy', searchBy);
       }
+      if (filters.city) params.append('city', filters.city);
+      if (filters.state) params.append('state', filters.state);
+      if (filters.gender) params.append('gender', filters.gender);
+      if (filters.department) params.append('department', filters.department);
+      if (filters.designation) params.append('designation', filters.designation);
+      
+      const response = await fetch(`/api/employees?${params.toString()}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setFilteredEmployees(data.data);
+      }
+      setShowFilters(false);
+    } catch (error) {
+      console.error('Error applying filters:', error);
+    } finally {
+      setIsSearching(false);
     }
-    
-    // Apply filters
-    if (filters.city) {
-      results = results.filter(emp => emp.city === filters.city);
-    }
-    if (filters.state) {
-      results = results.filter(emp => emp.state === filters.state);
-    }
-    if (filters.gender) {
-      results = results.filter(emp => emp.gender === filters.gender);
-    }
-    if (filters.department) {
-      results = results.filter(emp => emp.department === filters.department);
-    }
-    if (filters.designation) {
-      results = results.filter(emp => emp.designation === filters.designation);
-    }
-    if (filters.status) {
-      results = results.filter(emp => emp.status === filters.status);
-    }
-    if (filters.joiningDateFrom) {
-      results = results.filter(emp => new Date(emp.joiningDate) >= new Date(filters.joiningDateFrom));
-    }
-    if (filters.joiningDateTo) {
-      results = results.filter(emp => new Date(emp.joiningDate) <= new Date(filters.joiningDateTo));
-    }
-    
-    setFilteredEmployees(results);
-    setShowFilters(false);
   };
 
   // Clear filters
@@ -195,7 +135,8 @@ export default function SearchEmployeePage() {
       joiningDateFrom: '',
       joiningDateTo: ''
     });
-    setFilteredEmployees(employees);
+    setSearchQuery('');
+    fetchEmployees();
   };
 
   // Get unique values for filter dropdowns
@@ -212,8 +153,39 @@ export default function SearchEmployeePage() {
 
   // Export to CSV
   const handleExport = () => {
-    alert('Export functionality would download employee data as CSV');
+    const csv = [
+      ['Employee ID', 'Name', 'Designation', 'Department', 'City', 'Gender', 'Joining Date', 'Mobile', 'Status'].join(','),
+      ...filteredEmployees.map(emp => [
+        emp.employeeId,
+        emp.fullName,
+        emp.designation,
+        emp.department,
+        emp.city,
+        emp.gender,
+        emp.joiningDate,
+        emp.mobileNumber,
+        emp.status
+      ].join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `employees_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
   };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-amber-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Loading employees...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -380,43 +352,6 @@ export default function SearchEmployeePage() {
                 ))}
               </select>
             </div>
-
-            {/* Status Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <select
-                value={filters.status}
-                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-              >
-                <option value="">All Status</option>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-                <option value="On Leave">On Leave</option>
-              </select>
-            </div>
-
-            {/* Joining Date From */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Joined From</label>
-              <input
-                type="date"
-                value={filters.joiningDateFrom}
-                onChange={(e) => setFilters({ ...filters, joiningDateFrom: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
-
-            {/* Joining Date To */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Joined To</label>
-              <input
-                type="date"
-                value={filters.joiningDateTo}
-                onChange={(e) => setFilters({ ...filters, joiningDateTo: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
           </div>
 
           {/* Filter Actions */}
@@ -516,9 +451,9 @@ export default function SearchEmployeePage() {
                         </button>
                         <button
                           className="p-2 hover:bg-gray-100 rounded-lg"
-                          title="DownLoad PDF"
+                          title="Delete"
                         >
-                          <Download className="w-4 h-4 text-black" />
+                          {/* <Trash2 className="w-4 h-4 text-red-600" /> */}
                         </button>
                       </div>
                     </td>
@@ -532,121 +467,116 @@ export default function SearchEmployeePage() {
 
       {/* Employee Details Modal */}
       {showDetailsModal && selectedEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">Employee Details</h2>
-                <p className="text-gray-600">{selectedEmployee.employeeId}</p>
-              </div>
-              <button
-                onClick={() => setShowDetailsModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+        <EmployeeDetailsModal
+          employee={selectedEmployee}
+          onClose={() => setShowDetailsModal(false)}
+        />
+      )}
+    </div>
+  );
+}
 
-            <div className="p-6 space-y-6">
-              {/* Personal Information */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-3">Personal Information</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Full Name</p>
-                    <p className="font-medium text-gray-900">{selectedEmployee.fullName}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Gender</p>
-                    <p className="font-medium text-gray-900">{selectedEmployee.gender}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Mobile Number</p>
-                    <p className="font-medium text-gray-900">{selectedEmployee.mobileNumber}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Email</p>
-                    <p className="font-medium text-gray-900">{selectedEmployee.email}</p>
-                  </div>
-                </div>
-              </div>
+// Employee Details Modal Component
+function EmployeeDetailsModal({ employee, onClose }: { employee: any; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{employee.fullName}</h2>
+            <p className="text-gray-600">{employee.employeeId}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-              {/* Employment Details */}
+        <div className="p-6 space-y-6">
+          {/* Personal Information */}
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-3">Personal Information</h3>
+            <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-3">Employment Details</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Designation</p>
-                    <p className="font-medium text-gray-900">{selectedEmployee.designation}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Department</p>
-                    <p className="font-medium text-gray-900">{selectedEmployee.department}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Joining Date</p>
-                    <p className="font-medium text-gray-900">{selectedEmployee.joiningDate}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Work Location</p>
-                    <p className="font-medium text-gray-900">{selectedEmployee.workLocation}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Status</p>
-                    <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                      {selectedEmployee.status}
-                    </span>
-                  </div>
-                </div>
+                <p className="text-sm text-gray-600">Gender</p>
+                <p className="font-medium text-gray-900">{employee.gender}</p>
               </div>
-
-              {/* Government IDs */}
               <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-3">Government IDs</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Aadhar Number</p>
-                    <p className="font-medium text-gray-900">{selectedEmployee.aadharNumber}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">PAN Number</p>
-                    <p className="font-medium text-gray-900">{selectedEmployee.panNumber}</p>
-                  </div>
-                </div>
+                <p className="text-sm text-gray-600">Mobile Number</p>
+                <p className="font-medium text-gray-900">{employee.mobileNumber}</p>
               </div>
-
-              {/* Location */}
               <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-3">Location</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">City</p>
-                    <p className="font-medium text-gray-900">{selectedEmployee.city}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">State</p>
-                    <p className="font-medium text-gray-900">{selectedEmployee.state}</p>
-                  </div>
-                </div>
+                <p className="text-sm text-gray-600">Email</p>
+                <p className="font-medium text-gray-900">{employee.email || 'N/A'}</p>
               </div>
             </div>
+          </div>
 
-            <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex gap-4">
-              <button
-                onClick={() => setShowDetailsModal(false)}
-                className="flex-1 border border-gray-300 py-2 rounded-lg hover:bg-gray-50 font-semibold"
-              >
-                Close
-              </button>
-              <button
-                className="flex-1 bg-amber-600 text-white py-2 rounded-lg hover:bg-amber-700 font-semibold"
-              >
-                Edit Employee
-              </button>
+          {/* Employment Details */}
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-3">Employment Details</h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-600">Designation</p>
+                <p className="font-medium text-gray-900">{employee.designation}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Department</p>
+                <p className="font-medium text-gray-900">{employee.department}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Joining Date</p>
+                <p className="font-medium text-gray-900">{employee.joiningDate}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Work Location</p>
+                <p className="font-medium text-gray-900">{employee.workLocation || 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Government IDs */}
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-3">Government IDs</h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-600">Aadhar Number</p>
+                <p className="font-medium text-gray-900">{employee.aadharNumber}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">PAN Number</p>
+                <p className="font-medium text-gray-900">{employee.panNumber}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Location */}
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 mb-3">Location</h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-600">City</p>
+                <p className="font-medium text-gray-900">{employee.city}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">State</p>
+                <p className="font-medium text-gray-900">{employee.state}</p>
+              </div>
             </div>
           </div>
         </div>
-      )}
+
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6">
+          <button
+            onClick={onClose}
+            className="w-full border border-gray-300 py-2 rounded-lg hover:bg-gray-50 font-semibold"
+          >
+            Close
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

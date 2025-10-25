@@ -37,6 +37,8 @@ const navItems = [
   { name: 'Add Job', icon: Briefcase, path: '/admin/add-job' },
   { name: 'Add Employee', icon: Users, path: '/admin/add-employee' },
   { name: 'Search Employee', icon: Search, path: '/admin/search-employee' },
+  { name: 'Support Ticket', icon: Search, path: '/admin/support-messages' },
+  
 ];
 
   return (
@@ -52,9 +54,9 @@ const navItems = [
             >
               {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
-            <h1 className="text-xl font-bold text-gray-900">
+            <Link href='/' className="text-xl font-bold text-gray-900">
               Sachin Security <span className="text-amber-600">Admin</span>
-            </h1>
+            </Link>
           </div>
 
           {/* Logout Button */}

@@ -11,10 +11,6 @@ export default function Footer() {
     'Detective Services'
   ];
 
-  const aboutuslinks = [
-    'Terms and Condition'
-  ];
-
   const services = [
     'Industrial Security',
     'Corporate Security',
@@ -29,7 +25,7 @@ export default function Footer() {
 
   return (
     <footer className="bg-slate-950 border-t border-slate-800">
-      <div className="container mx-auto px-6 py-16">
+      <div className="container mx-auto px-6 pt-16">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           {/* Our Expertise */}
           <div>
@@ -143,6 +139,20 @@ export default function Footer() {
               <a href="#" className="text-slate-400 hover:text-amber-400 transition-colors">Terms of Service</a>
             </div>
           </div>
+          <div
+              className="flex items-center p-2 justify-center gap-2 text-xs text-white"
+            >
+              <span className="text-slate-600">Developed by</span>
+              <a
+                href="https://www.linkedin.com/in/yadav-majersingh-ramsingh-0858aa211/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-transparent bg-linear-to-r from-cyan-900 to-teal-600 bg-clip-text font-semibold hover:from-teal-300 hover:to-cyan-400 transition-all duration-300"
+              >
+                Majersingh
+        </a>
+        <Linkedin className="text-cyan-900 " />
+      </div>
         </div>
       </div>
     </footer>

@@ -2,10 +2,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function AddEmployeePage() {
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  
   const [formData, setFormData] = useState({
     // Personal Information
     fullName: '',
@@ -58,16 +63,129 @@ export default function AddEmployeePage() {
     emergencyContactRelation: ''
   });
 
+  // Validate form
+  const validateForm = () => {
+    // Required fields
+    const requiredFields = [
+      { field: 'fullName', label: 'Full Name' },
+      { field: 'fatherName', label: "Father's Name" },
+      { field: 'dateOfBirth', label: 'Date of Birth' },
+      { field: 'gender', label: 'Gender' },
+      { field: 'mobileNumber', label: 'Mobile Number' },
+      { field: 'currentAddress', label: 'Current Address' },
+      { field: 'city', label: 'City' },
+      { field: 'state', label: 'State' },
+      { field: 'pincode', label: 'PIN Code' },
+      { field: 'aadharNumber', label: 'Aadhar Number' },
+      { field: 'panNumber', label: 'PAN Number' },
+      { field: 'employeeId', label: 'Employee ID' },
+      { field: 'designation', label: 'Designation' },
+      { field: 'department', label: 'Department' },
+      { field: 'joiningDate', label: 'Joining Date' }
+    ];
+
+    for (const { field, label } of requiredFields) {
+      if (!formData[field as keyof typeof formData]?.trim()) {
+        setError(`${label} is required`);
+        return false;
+      }
+    }
+
+    // Validate Aadhar (12 digits)
+    if (!/^\d{12}$/.test(formData.aadharNumber.replace(/\s+/g, ''))) {
+      setError('Aadhar number must be 12 digits');
+      return false;
+    }
+
+    // Validate PAN (ABCDE1234F format)
+    if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panNumber)) {
+      setError('PAN number format is invalid (e.g., ABCDE1234F)');
+      return false;
+    }
+
+    // Validate mobile number (10 digits)
+    if (!/^[6-9]\d{9}$/.test(formData.mobileNumber.replace(/[\s+-]/g, ''))) {
+      setError('Mobile number must be a valid 10-digit Indian number');
+      return false;
+    }
+
+    // Validate email if provided
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      setError('Email format is invalid');
+      return false;
+    }
+
+    // Validate PIN code (6 digits)
+    if (!/^\d{6}$/.test(formData.pincode)) {
+      setError('PIN code must be 6 digits');
+      return false;
+    }
+
+    return true;
+  };
+
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setSuccess(false);
+
+    // Validate form
+    if (!validateForm()) {
+      return;
+    }
+
     setIsSubmitting(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    alert('Employee added successfully!');
-    setIsSubmitting(false);
+
+    try {
+      const response = await fetch('/api/employees', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess(true);
+        
+        // Show success message for 2 seconds then redirect
+        setTimeout(() => {
+          router.push('/admin/search-employee');
+        }, 2000);
+      } else {
+        setError(data.error || 'Failed to add employee. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error adding employee:', error);
+      setError('Failed to add employee. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  // Success state
+  if (success) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
+          <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-12 h-12 text-green-600" />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-3">Employee Added Successfully!</h2>
+          <p className="text-gray-600 text-lg mb-2">
+            <strong>{formData.fullName}</strong> ({formData.employeeId})
+          </p>
+          <p className="text-gray-600 mb-6">
+            Redirecting to employee list...
+          </p>
+          <Loader2 className="w-6 h-6 text-amber-600 animate-spin mx-auto" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -77,6 +195,17 @@ export default function AddEmployeePage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-red-900 mb-1">Validation Error</h3>
+              <p className="text-red-700 text-sm">{error}</p>
+            </div>
+          </div>
+        )}
+
         {/* Personal Information */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Personal Information</h2>
@@ -275,9 +404,11 @@ export default function AddEmployeePage() {
               <input
                 type="text"
                 required
+                maxLength={6}
                 value={formData.pincode}
                 onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                placeholder="XXXXXX"
               />
             </div>
           </div>
@@ -582,8 +713,9 @@ export default function AddEmployeePage() {
         <div className="flex gap-4">
           <button
             type="button"
-            onClick={() => window.history.back()}
+            onClick={() => router.back()}
             className="flex-1 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 font-semibold"
+            disabled={isSubmitting}
           >
             Cancel
           </button>

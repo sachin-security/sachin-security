@@ -22,168 +22,6 @@ import {
   Loader2
 } from 'lucide-react';
 
-// Sample jobs database
-const jobsDatabase = {
-  JOB001: {
-    id: 'JOB001',
-    title: 'Security Guard',
-    department: 'Operations',
-    location: 'Vadodara, Gujarat',
-    type: 'Full-time',
-    experience: '0-2 years',
-    salary: '₹15,000 - ₹20,000/month',
-    postedDate: '2025-01-15',
-    status: 'Active',
-    description: 'We are seeking dedicated security guards for various client locations across Vadodara.',
-    eligibility: [
-      'Minimum 10th pass',
-      'Age: 21-45 years',
-      'Height: Minimum 5\'6"',
-      'Good physical fitness',
-      'No criminal record'
-    ],
-    responsibilities: [
-      'Monitor premises and personnel',
-      'Control access points',
-      'Conduct regular patrols',
-      'Report incidents immediately',
-      'Maintain security logs'
-    ]
-  },
-  JOB002: {
-    id: 'JOB002',
-    title: 'Security Supervisor',
-    department: 'Operations',
-    location: 'Multiple Locations (Gujarat)',
-    type: 'Full-time',
-    experience: '3-5 years',
-    salary: '₹25,000 - ₹35,000/month',
-    postedDate: '2025-01-10',
-    status: 'Active',
-    description: 'Experienced supervisors needed to manage security teams at client locations.',
-    eligibility: [
-      'Graduation preferred',
-      'Age: 25-50 years',
-      'Minimum 3 years security experience',
-      'Leadership skills',
-      'Valid driving license'
-    ],
-    responsibilities: [
-      'Lead and train security teams',
-      'Conduct site inspections',
-      'Handle client communications',
-      'Prepare duty rosters',
-      'Coordinate with management'
-    ]
-  },
-  JOB003: {
-    id: 'JOB003',
-    title: 'Female Security Guard',
-    department: 'Operations',
-    location: 'Hospitals & Malls - Vadodara',
-    type: 'Full-time',
-    experience: '0-3 years',
-    salary: '₹16,000 - ₹22,000/month',
-    postedDate: '2025-01-05',
-    status: 'Active',
-    description: 'Female security professionals required for healthcare and retail sectors.',
-    eligibility: [
-      'Minimum 12th pass',
-      'Age: 21-40 years',
-      'Good communication skills',
-      'Comfortable with shift work',
-      'Professional appearance'
-    ],
-    responsibilities: [
-      'Monitor female visitors and staff',
-      'Conduct security checks',
-      'Assist in emergency situations',
-      'Maintain visitor logs',
-      'Provide customer service'
-    ]
-  }
-};
-
-// Sample applicants database (organized by jobId)
-const applicantsDatabase = {
-  JOB001: [
-    {
-      id: 'APP001',
-      fullName: 'Rahul Sharma',
-      email: 'rahul.sharma@email.com',
-      phone: '+91 98765 43210',
-      dateOfBirth: '1995-05-15',
-      education: 'Graduate',
-      experience: '1',
-      address: '123, Park Street, Vadodara, Gujarat - 390001',
-      appliedDate: '2025-01-20',
-      status: 'Pending',
-      resumeUrl: '/resumes/rahul-sharma.pdf',
-      coverLetter: 'I am interested in this position because I have experience in security services and I am looking for a stable career with a reputed company like Sachin Security.'
-    },
-    {
-      id: 'APP002',
-      fullName: 'Priya Patel',
-      email: 'priya.patel@email.com',
-      phone: '+91 87654 32109',
-      dateOfBirth: '1998-08-22',
-      education: '12th',
-      experience: '0',
-      address: '456, Station Road, Vadodara, Gujarat - 390002',
-      appliedDate: '2025-01-19',
-      status: 'Shortlisted',
-      resumeUrl: '/resumes/priya-patel.pdf',
-      coverLetter: 'I am a fresher looking to start my career in security services. I am dedicated and willing to learn from experienced professionals.'
-    },
-    {
-      id: 'APP003',
-      fullName: 'Amit Kumar',
-      email: 'amit.kumar@email.com',
-      phone: '+91 76543 21098',
-      dateOfBirth: '1992-12-10',
-      education: '10th',
-      experience: '2',
-      address: '789, Market Area, Vadodara, Gujarat - 390003',
-      appliedDate: '2025-01-18',
-      status: 'Rejected',
-      resumeUrl: '/resumes/amit-kumar.pdf',
-      coverLetter: 'I have 2 years of experience in the security field and I am looking for better opportunities with growth potential.'
-    }
-  ],
-  JOB002: [
-    {
-      id: 'APP004',
-      fullName: 'Vijay Singh',
-      email: 'vijay.singh@email.com',
-      phone: '+91 65432 10987',
-      dateOfBirth: '1990-03-18',
-      education: 'Graduate',
-      experience: '4',
-      address: '321, College Road, Ahmedabad, Gujarat - 380001',
-      appliedDate: '2025-01-15',
-      status: 'Pending',
-      resumeUrl: '/resumes/vijay-singh.pdf',
-      coverLetter: 'I have 4 years of supervisory experience in security operations and I am confident I can lead teams effectively.'
-    }
-  ],
-  JOB003: [
-    {
-      id: 'APP005',
-      fullName: 'Sneha Desai',
-      email: 'sneha.desai@email.com',
-      phone: '+91 54321 09876',
-      dateOfBirth: '1996-07-25',
-      education: '12th',
-      experience: '1',
-      address: '567, Mall Road, Vadodara, Gujarat - 390005',
-      appliedDate: '2025-01-12',
-      status: 'Shortlisted',
-      resumeUrl: '/resumes/sneha-desai.pdf',
-      coverLetter: 'I have experience working in retail security and I am interested in expanding my skills in hospital security.'
-    }
-  ]
-};
-
 export default function JobApplicantsPage() {
   const params = useParams();
   const jobId = params.jobId as string;
@@ -196,30 +34,38 @@ export default function JobApplicantsPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Fetch job and applicants data
+  // Fetch job and applicants data from API
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Fetch job details
-      const jobData = jobsDatabase[jobId as keyof typeof jobsDatabase];
-      
-      if (!jobData) {
+      try {
+        // Fetch job details by ID
+        const jobResponse = await fetch(`/api/jobs/${jobId}`);
+        const jobData = await jobResponse.json();
+        
+        if (jobData.success) {
+          setJob(jobData.data);
+        } else {
+          console.error('Job not found:', jobData.error);
+          setJob(null);
+        }
+        
+        // Fetch applicants for this job
+        const applicantsResponse = await fetch(`/api/applicants?jobId=${jobId}`);
+        const applicantsData = await applicantsResponse.json();
+        
+        if (applicantsData.success) {
+          setApplicants(applicantsData.data);
+          setFilteredApplicants(applicantsData.data);
+        } else {
+          console.error('Failed to fetch applicants:', applicantsData.error);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
         setIsLoading(false);
-        return;
       }
-      
-      setJob(jobData);
-      
-      // Fetch applicants for this job
-      const jobApplicants = applicantsDatabase[jobId as keyof typeof applicantsDatabase] || [];
-      setApplicants(jobApplicants);
-      setFilteredApplicants(jobApplicants);
-      
-      setIsLoading(false);
     };
     
     fetchData();
@@ -246,21 +92,64 @@ export default function JobApplicantsPage() {
     setShowDetailsModal(true);
   };
 
-  // Update applicant status
-  const handleStatusUpdate = (applicantId: string, newStatus: string) => {
-    setApplicants(applicants.map(app => 
-      app.id === applicantId ? { ...app, status: newStatus } : app
-    ));
+  // Update applicant status via API
+  const handleStatusUpdate = async (applicantId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/applicants/${applicantId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update local state
+        setApplicants(applicants.map(app => 
+          app.id === applicantId ? { ...app, status: newStatus } : app
+        ));
+      } else {
+        alert('Failed to update applicant status');
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Failed to update applicant status');
+    }
   };
 
   // Download resume
   const downloadResume = (applicant: any) => {
-    alert(`Downloading resume for ${applicant.fullName}`);
+    if (applicant.resumeUrl) {
+      window.open(applicant.resumeUrl, '_blank');
+    } else {
+      alert('Resume not available');
+    }
   };
 
-  // Export applicants
+  // Export applicants to CSV
   const handleExport = () => {
-    alert('Exporting applicants data to CSV');
+    const csv = [
+      ['ID', 'Name', 'Email', 'Phone', 'Education', 'Experience', 'Status', 'Applied Date'].join(','),
+      ...filteredApplicants.map(app => [
+        app.id,
+        app.fullName,
+        app.email,
+        app.phone,
+        app.education,
+        app.experience,
+        app.status,
+        app.appliedDate
+      ].join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `applicants_${jobId}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
   };
 
   // Calculate stats
@@ -361,7 +250,7 @@ export default function JobApplicantsPage() {
             <DollarSign className="w-5 h-5 text-gray-400" />
             <div>
               <p className="text-sm text-gray-600">Salary</p>
-              <p className="font-medium text-gray-900">{job.salary}</p>
+              <p className="font-medium text-gray-900">{job.salary || 'Not specified'}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -384,23 +273,23 @@ export default function JobApplicantsPage() {
           <div>
             <h2 className="text-xl font-bold text-gray-900 mb-3">Eligibility Criteria</h2>
             <ul className="space-y-2">
-              {job.eligibility.map((item: string, index: number) => (
+              {job.eligibility?.map((item: string, index: number) => (
                 <li key={index} className="flex items-start gap-2 text-gray-700">
                   <span className="text-amber-600 mt-1">•</span>
                   <span>{item}</span>
                 </li>
-              ))}
+              )) || <li className="text-gray-500">No eligibility criteria specified</li>}
             </ul>
           </div>
           <div>
             <h2 className="text-xl font-bold text-gray-900 mb-3">Responsibilities</h2>
             <ul className="space-y-2">
-              {job.responsibilities.map((item: string, index: number) => (
+              {job.responsibilities?.map((item: string, index: number) => (
                 <li key={index} className="flex items-start gap-2 text-gray-700">
                   <span className="text-amber-600 mt-1">•</span>
                   <span>{item}</span>
                 </li>
-              ))}
+              )) || <li className="text-gray-500">No responsibilities specified</li>}
             </ul>
           </div>
         </div>

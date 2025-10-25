@@ -2,10 +2,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function AddJobPage() {
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  
   const [formData, setFormData] = useState({
     title: '',
     department: '',
@@ -18,27 +23,90 @@ export default function AddJobPage() {
     responsibilities: ['']
   });
 
+  // Validate form
+  const validateForm = () => {
+    // Check required fields
+    if (!formData.title.trim()) {
+      setError('Job title is required');
+      return false;
+    }
+    if (!formData.department.trim()) {
+      setError('Department is required');
+      return false;
+    }
+    if (!formData.location.trim()) {
+      setError('Location is required');
+      return false;
+    }
+    if (!formData.description.trim()) {
+      setError('Job description is required');
+      return false;
+    }
+
+    // Validate eligibility criteria
+    const validEligibility = formData.eligibility.filter(item => item.trim() !== '');
+    if (validEligibility.length === 0) {
+      setError('At least one eligibility criterion is required');
+      return false;
+    }
+
+    // Validate responsibilities
+    const validResponsibilities = formData.responsibilities.filter(item => item.trim() !== '');
+    if (validResponsibilities.length === 0) {
+      setError('At least one responsibility is required');
+      return false;
+    }
+
+    return true;
+  };
+
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setSuccess(false);
+
+    // Validate form
+    if (!validateForm()) {
+      return;
+    }
+
     setIsSubmitting(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    alert('Job posted successfully!');
-    setIsSubmitting(false);
-    // Reset form
-    setFormData({
-      title: '',
-      department: '',
-      location: '',
-      type: 'Full-time',
-      experience: '',
-      salary: '',
-      eligibility: [''],
-      description: '',
-      responsibilities: ['']
-    });
+
+    try {
+      // Filter out empty eligibility and responsibilities
+      const cleanedData = {
+        ...formData,
+        eligibility: formData.eligibility.filter(item => item.trim() !== ''),
+        responsibilities: formData.responsibilities.filter(item => item.trim() !== '')
+      };
+
+      const response = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cleanedData),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess(true);
+        
+        // Show success message for 2 seconds then redirect
+        setTimeout(() => {
+          router.push('/admin/all-jobs');
+        }, 2000);
+      } else {
+        setError(data.error || 'Failed to post job. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error posting job:', error);
+      setError('Failed to post job. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const addField = (field: 'eligibility' | 'responsibilities') => {
@@ -59,6 +127,24 @@ export default function AddJobPage() {
     setFormData({ ...formData, [field]: updated });
   };
 
+  // Success state
+  if (success) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
+          <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-12 h-12 text-green-600" />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-3">Job Posted Successfully!</h2>
+          <p className="text-gray-600 text-lg mb-6">
+            The job opening has been published. Redirecting to all jobs...
+          </p>
+          <Loader2 className="w-6 h-6 text-amber-600 animate-spin mx-auto" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-8">
@@ -67,6 +153,17 @@ export default function AddJobPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-red-900 mb-1">Error</h3>
+              <p className="text-red-700 text-sm">{error}</p>
+            </div>
+          </div>
+        )}
+
         {/* Basic Information */}
         <div>
           <h2 className="text-xl font-bold text-gray-900 mb-4">Basic Information</h2>
@@ -169,12 +266,17 @@ export default function AddJobPage() {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
             placeholder="Brief description of the role..."
           />
+          <p className="text-xs text-gray-500 mt-1">
+            {formData.description.length} / 1000 characters
+          </p>
         </div>
 
         {/* Eligibility Criteria */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Eligibility Criteria</h2>
+            <h2 className="text-xl font-bold text-gray-900">
+              Eligibility Criteria <span className="text-red-500">*</span>
+            </h2>
             <button
               type="button"
               onClick={() => addField('eligibility')}
@@ -210,7 +312,9 @@ export default function AddJobPage() {
         {/* Responsibilities */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Responsibilities</h2>
+            <h2 className="text-xl font-bold text-gray-900">
+              Responsibilities <span className="text-red-500">*</span>
+            </h2>
             <button
               type="button"
               onClick={() => addField('responsibilities')}
@@ -244,11 +348,19 @@ export default function AddJobPage() {
         </div>
 
         {/* Submit Button */}
-        <div className="pt-4">
+        <div className="pt-4 flex gap-4">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="flex-1 border border-gray-300 py-3 rounded-lg hover:bg-gray-50 font-semibold"
+            disabled={isSubmitting}
+          >
+            Cancel
+          </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-amber-600 text-white py-3 rounded-lg hover:bg-amber-700 font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 bg-amber-600 text-white py-3 rounded-lg hover:bg-amber-700 font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>
