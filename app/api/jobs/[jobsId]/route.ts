@@ -36,10 +36,12 @@ export async function GET(
 
 // PUT - Update job
 export async function PUT(
-  request: NextRequest,
-  { params }: { params: { jobId: string } }
+   request: NextRequest,
+  context: { params: Promise<{ jobsId: string }> }
 ) {
   try {
+    // ✅ unwrap the params Promise
+    const params = await context.params;
     const body = await request.json();
     const collection = await getCollection('all-jobs');
     
@@ -49,7 +51,7 @@ export async function PUT(
     };
     
     const result = await collection.updateOne(
-      { id: params.jobId },
+      { id: params.jobsId },
       { $set: updateData }
     );
     
@@ -74,13 +76,15 @@ export async function PUT(
 
 // DELETE - Delete job
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { jobId: string } }
+   request: NextRequest,
+  context: { params: Promise<{ jobsId: string }> }
 ) {
   try {
+    // ✅ unwrap the params Promise
+    const params = await context.params;
     const collection = await getCollection('all-jobs');
     
-    const result = await collection.deleteOne({ id: params.jobId });
+    const result = await collection.deleteOne({ id: params.jobsId });
     
     if (result.deletedCount === 0) {
       return NextResponse.json(

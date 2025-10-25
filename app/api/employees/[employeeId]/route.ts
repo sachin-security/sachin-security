@@ -5,9 +5,10 @@ import { getCollection } from '@/app/lib/db';
 // GET - Fetch single employee
 export async function GET(
   request: NextRequest,
-  { params }: { params: { employeeId: string } }
+  context: { params: Promise<{ employeeId: string }> }
 ) {
   try {
+    const params = await context.params;
     const collection = await getCollection('employees');
     const employee = await collection.findOne({ employeeId: params.employeeId });
     
@@ -33,9 +34,10 @@ export async function GET(
 // PUT - Update employee
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { employeeId: string } }
+  context: { params: Promise<{ employeeId: string }> }
 ) {
   try {
+    const params = await context.params;
     const body = await request.json();
     const collection = await getCollection('employees');
     
@@ -71,9 +73,10 @@ export async function PUT(
 // DELETE - Delete employee
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { employeeId: string } }
+  context: { params: Promise<{ employeeId: string }> }
 ) {
   try {
+    const params = await context.params;
     const collection = await getCollection('employees');
     
     const result = await collection.deleteOne({ employeeId: params.employeeId });

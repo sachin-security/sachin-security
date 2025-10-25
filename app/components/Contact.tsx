@@ -1,11 +1,15 @@
 // components/Contact.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect ,Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Mail, Phone, MapPin, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 
-export default function Contact() {
+
+export default function SuspenseWrapper() {
+  return <Suspense fallback={<>Loading...</>}><Contact/></Suspense>;
+}
+  function Contact() {
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
