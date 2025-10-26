@@ -21,6 +21,7 @@ import {
   Phone,
   Loader2
 } from 'lucide-react';
+import { downloadFile } from '@/app/lib/downloadutils';
 
 export default function JobApplicantsPage() {
   const params = useParams();
@@ -120,9 +121,15 @@ export default function JobApplicantsPage() {
   };
 
   // Download resume
-  const downloadResume = (applicant: any) => {
+  const downloadResume = async (applicant: any) => {
     if (applicant.resumeUrl) {
-      window.open(applicant.resumeUrl, '_blank');
+        console.log(applicant)
+        const success = await downloadFile(applicant.resumeUrl, applicant.resumeFilename);
+        alert('Downloaded Successfully');
+         if (!success) {
+        alert('Download failed');
+  }
+    //   window.open(applicant.resumeUrl, '_blank');
     } else {
       alert('Resume not available');
     }

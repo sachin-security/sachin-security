@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     description: "ISO 9001:2015 certified security services provider offering comprehensive security solutions across Gujarat, UP, MP, and Rajasthan.",
     images: [
       {
-        url: "/og-image.jpg", // Add this image to your public folder
+        url: "/logo.png", // Add this image to your public folder
         width: 1200,
         height: 630,
         alt: "Sachin Security Services",
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Sachin Security Services | Professional Security Since 1996",
     description: "ISO 9001:2015 certified security services provider",
-    images: ["/og-image.jpg"],
+    images: ["/logo.png"],
   },
   robots: {
     index: true,

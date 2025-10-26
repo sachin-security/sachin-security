@@ -1,11 +1,11 @@
 // app/api/upload/resume/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
+import { getCollection } from '@/app/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("Got req to upload resume")
+    console.log("Got request to upload resume");
+    
     const formData = await request.formData();
     const file = formData.get('resume') as File;
     
@@ -17,7 +17,11 @@ export async function POST(request: NextRequest) {
     }
     
     // Validate file type
-    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const allowedTypes = [
+      'application/pdf', 
+      'application/msword', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         { success: false, error: 'Only PDF and DOC files are allowed' },
@@ -33,33 +37,45 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Generate unique filename
-    const timestamp = Date.now();
-    const originalName = file.name.replace(/\s+/g, '_');
-    const filename = `${timestamp}_${originalName}`;
-    
-    // Convert file to buffer
+    // Convert file to Base64
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    const base64 = buffer.toString('base64');
     
-    // Save file to public/resumes directory
-    const uploadDir = join(process.cwd(), 'public', 'resumes');
-    const filepath = join(uploadDir, filename);
+    // we can Generate unique filename using time stamp
+    const originalName = file.name.replace(/\s+/g, '_');
+    const filename = `${originalName}`;
     
-    await writeFile(filepath, buffer);
+    // Store in MongoDB
+    const collection = await getCollection('uploads');
+    
+    const uploadData = {
+      filename,
+      originalName: file.name,
+      contentType: file.type,
+      size: file.size,
+      data: base64, // Store as Base64 string
+      uploadedAt: new Date()
+    };
+    
+    const result = await collection.insertOne(uploadData);
+    
+    console.log('File uploaded successfully:', filename);
     
     return NextResponse.json({
       success: true,
       message: 'Resume uploaded successfully',
       data: {
+        fileId: result.insertedId.toString(),
         filename,
-        url: `/resumes/${filename}`,
+        originalName: file.name,
         size: file.size,
-        type: file.type
+        type: file.type,
+        url: `/api/download/resume/${result.insertedId.toString()}`
       }
     });
   } catch (error: any) {
-    console.log(error)
+    console.error('Upload error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
