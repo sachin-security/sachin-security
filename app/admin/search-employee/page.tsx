@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Search, Filter, X, Loader2, Download, Eye, Edit, Trash2, Mail } from 'lucide-react';
+import Image from 'next/image';
 
 interface Employee {
   fullName: string;
@@ -476,99 +477,140 @@ export default function SearchEmployeePage() {
   );
 }
 
-// Employee Details Modal Component
-function EmployeeDetailsModal({ employee, onClose }: { employee: any; onClose: () => void }) {
+
+function EmployeeDetailsModal({
+  employee,
+  onClose,
+}: {
+  employee: any;
+  onClose: () => void;
+}) {
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
+
+  const DetailRow = ({ label, value }: { label: string; value?: string }) => (
+    <div className="flex justify-between border-b border-gray-200 py-2">
+      <p className="text-gray-600 text-sm w-1/2">{label}</p>
+      <p className="text-gray-900 font-medium w-1/2 text-right">{value || '—'}</p>
+    </div>
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+      <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b p-5 flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{employee.fullName}</h2>
-            <p className="text-gray-600">{employee.employeeId}</p>
+            <h2 className="text-xl font-semibold text-gray-900">{employee.fullName}</h2>
+            <p className="text-sm text-gray-500">{employee.employeeId}</p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex gap-2">
+            <DownloadEmppdf employee={employee}/>
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        <div className="p-6 space-y-6">
-          {/* Personal Information */}
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-3">Personal Information</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Gender</p>
-                <p className="font-medium text-gray-900">{employee.gender}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Mobile Number</p>
-                <p className="font-medium text-gray-900">{employee.mobileNumber}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Email</p>
-                <p className="font-medium text-gray-900">{employee.email || 'N/A'}</p>
-              </div>
-            </div>
+        {/* PDF Content */}
+        <div id="employee-pdf-content" className="p-6 bg-gray-50">
+          {/* Logo and Title */}
+          <div className="flex items-center justify-center mb-6">
+            <Image
+              src="/logo.png"
+              alt="Company Logo"
+              width={60}
+              height={60}
+              className="rounded-full border border-gray-300"
+            />
           </div>
+          <h1 className="text-center text-lg font-bold mb-2 text-gray-900">
+            Sachin Security Services Pvt. Ltd.
+          </h1>
+          <p className="text-center text-sm text-gray-600 mb-6">
+            Employee Details Report
+          </p>
+
+          {/* Profile Photo */}
+          <div className="flex justify-center mb-6">
+            <Image
+              src={employee.profileUrl || '/api/download/profile/default'}
+              alt="Profile"
+              width={120}
+              height={120}
+              className="rounded-lg border border-gray-300 object-cover"
+              unoptimized
+            />
+          </div>
+
+          {/* Personal Details */}
+          <Section title="Personal Information">
+            <DetailRow label="Full Name" value={employee.fullName} />
+            <DetailRow label="Father's Name" value={employee.fatherName} />
+            <DetailRow label="Mother's Name" value={employee.motherName} />
+            <DetailRow label="Date of Birth" value={employee.dateOfBirth} />
+            <DetailRow label="Gender" value={employee.gender} />
+            <DetailRow label="Blood Group" value={employee.bloodGroup} />
+            <DetailRow label="Marital Status" value={employee.maritalStatus} />
+            <DetailRow label="Mobile Number" value={employee.mobileNumber} />
+            <DetailRow label="Alternate Number" value={employee.alternateNumber} />
+            <DetailRow label="Email" value={employee.email} />
+          </Section>
+
+          {/* Address Details */}
+          <Section title="Address Details">
+            <DetailRow label="Current Address" value={employee.currentAddress} />
+            <DetailRow label="Permanent Address" value={employee.permanentAddress} />
+            <DetailRow label="City" value={employee.city} />
+            <DetailRow label="State" value={employee.state} />
+            <DetailRow label="Pincode" value={employee.pincode} />
+          </Section>
 
           {/* Employment Details */}
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-3">Employment Details</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Designation</p>
-                <p className="font-medium text-gray-900">{employee.designation}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Department</p>
-                <p className="font-medium text-gray-900">{employee.department}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Joining Date</p>
-                <p className="font-medium text-gray-900">{employee.joiningDate}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Work Location</p>
-                <p className="font-medium text-gray-900">{employee.workLocation || 'N/A'}</p>
-              </div>
-            </div>
-          </div>
+          <Section title="Employment Details">
+            <DetailRow label="Designation" value={employee.designation} />
+            <DetailRow label="Department" value={employee.department} />
+            <DetailRow label="Joining Date" value={employee.joiningDate} />
+            <DetailRow label="Employment Type" value={employee.employmentType} />
+            <DetailRow label="Reporting Manager" value={employee.reportingManager} />
+            <DetailRow label="Work Location" value={employee.workLocation} />
+            <DetailRow label="Status" value={employee.status} />
+          </Section>
 
-          {/* Government IDs */}
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-3">Government IDs</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Aadhar Number</p>
-                <p className="font-medium text-gray-900">{employee.aadharNumber}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">PAN Number</p>
-                <p className="font-medium text-gray-900">{employee.panNumber}</p>
-              </div>
-            </div>
-          </div>
+          {/* Salary & Benefits */}
+          <Section title="Salary & Benefits">
+            <DetailRow label="Basic Salary" value={employee.basicSalary} />
+            <DetailRow label="HRA" value={employee.hra} />
+            <DetailRow label="Other Allowances" value={employee.otherAllowances} />
+            <DetailRow label="PF Number" value={employee.pfNumber} />
+            <DetailRow label="ESI Number" value={employee.esiNumber} />
+            <DetailRow label="UAN Number" value={employee.uanNumber} />
+          </Section>
 
-          {/* Location */}
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-3">Location</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">City</p>
-                <p className="font-medium text-gray-900">{employee.city}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">State</p>
-                <p className="font-medium text-gray-900">{employee.state}</p>
-              </div>
-            </div>
+          {/* Bank Details */}
+          <Section title="Bank Information">
+            <DetailRow label="Bank Name" value={employee.bankName} />
+            <DetailRow label="Account Number" value={employee.accountNumber} />
+            <DetailRow label="IFSC Code" value={employee.ifscCode} />
+            <DetailRow label="Branch Name" value={employee.branchName} />
+          </Section>
+
+          {/* Emergency Contact */}
+          <Section title="Emergency Contact">
+            <DetailRow label="Contact Name" value={employee.emergencyContactName} />
+            <DetailRow label="Contact Number" value={employee.emergencyContactNumber} />
+            <DetailRow label="Relation" value={employee.emergencyContactRelation} />
+          </Section>
+
+          {/* Footer */}
+          <div className="mt-8 text-center text-xs text-gray-500 border-t pt-4">
+            <p>Generated on {new Date().toLocaleDateString('en-IN')}</p>
+            <p>Official record of Sachin Security Services Pvt. Ltd.</p>
           </div>
         </div>
 
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6">
+        {/* Close Button */}
+        <div className="sticky bottom-0 bg-white border-t p-4">
           <button
             onClick={onClose}
             className="w-full border border-gray-300 py-2 rounded-lg hover:bg-gray-50 font-semibold"
@@ -579,4 +621,151 @@ function EmployeeDetailsModal({ employee, onClose }: { employee: any; onClose: (
       </div>
     </div>
   );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+      <h3 className="text-base font-semibold text-gray-900 mb-3 border-b pb-2">
+        {title}
+      </h3>
+      <div className="divide-y divide-gray-200">{children}</div>
+    </div>
+  );
+}
+
+
+import jsPDF from 'jspdf';
+
+function DownloadEmppdf({
+  employee
+}: {
+  employee: any;
+}) {
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    setIsGeneratingPDF(true);
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = 210;
+
+      // Header
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(16);
+      pdf.text('Sachin Security Services Pvt. Ltd.', pageWidth / 2, 20, { align: 'center' });
+      pdf.setFontSize(11);
+      pdf.text('Employee Details Slip', pageWidth / 2, 28, { align: 'center' });
+
+      // Photo
+      if (employee.profileUrl) {
+        try {
+          const imgData = await toBase64(employee.profileUrl);
+          pdf.addImage(imgData, 'JPEG', 160, 35, 30, 30);
+        } catch {}
+      }
+
+      // Basic Info
+      let y = 40;
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Personal Details', 14, y);
+      pdf.setLineWidth(0.2);
+      pdf.line(14, y + 1, 150, y + 1);
+      y += 8;
+
+      const addRow = (label: string, value: string) => {
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(label, 14, y);
+        pdf.text(':', 70, y);
+        pdf.text(value || '-', 75, y);
+        y += 7;
+      };
+
+      addRow('Full Name', employee.fullName);
+      addRow("Father's Name", employee.fatherName);
+      addRow('Date of Birth', employee.dateOfBirth);
+      addRow('Gender', employee.gender);
+      addRow('Blood Group', employee.bloodGroup);
+      addRow('Mobile', employee.mobileNumber);
+      addRow('Email', employee.email);
+      addRow('Address', employee.currentAddress);
+
+      // Employment
+      y += 5;
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Employment Details', 14, y);
+      pdf.line(14, y + 1, 196, y + 1);
+      y += 8;
+      addRow('Employee ID', employee.employeeId);
+      addRow('Designation', employee.designation);
+      addRow('Department', employee.department);
+      addRow('Joining Date', employee.joiningDate);
+      addRow('Employment Type', employee.employmentType);
+      addRow('Work Location', employee.workLocation);
+
+      // Salary
+      y += 5;
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Salary & Bank Details', 14, y);
+      pdf.line(14, y + 1, 196, y + 1);
+      y += 8;
+      addRow('Basic Salary', employee.basicSalary);
+      addRow('HRA', employee.hra);
+      addRow('Other Allowances', employee.otherAllowances);
+      addRow('Bank Name', employee.bankName);
+      addRow('A/C Number', employee.accountNumber);
+      addRow('IFSC Code', employee.ifscCode);
+      addRow('Branch', employee.branchName);
+
+      // Emergency Contact
+      y += 5;
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Emergency Contact', 14, y);
+      pdf.line(14, y + 1, 196, y + 1);
+      y += 8;
+      addRow('Name', employee.emergencyContactName);
+      addRow('Number', employee.emergencyContactNumber);
+      addRow('Relation', employee.emergencyContactRelation);
+
+      // Footer
+      y += 10;
+      pdf.setFontSize(9);
+      pdf.setTextColor(100);
+      pdf.text(
+        `Generated on ${new Date().toLocaleDateString('en-IN')} | Official Record`,
+        pageWidth / 2,
+        y,
+        { align: 'center' }
+      );
+
+      pdf.save(`${employee.fullName.replace(/\s+/g, '_')}_Slip.pdf`);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to generate PDF.');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
+  const toBase64 = async (url: string) => {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  return (
+    <button
+        onClick={handleDownloadPDF}
+        disabled={isGeneratingPDF}
+        className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 disabled:bg-gray-400 flex items-center gap-2"
+    >
+        {isGeneratingPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+        PDF
+    </button>
+)
+       
 }

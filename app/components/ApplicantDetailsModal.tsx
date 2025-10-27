@@ -59,12 +59,14 @@ export default function ApplicantDetailsModal({
     setIsDownloading(true);
     
     try {
-      // Simulate download delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
       // In production, this would be actual file download
+      if(!applicant.resumeUrl)
+      {
+        alert("No Resume Available")
+        return;
+      }
       const link = document.createElement('a');
-      link.href = applicant.resumeUrl || '#';
+      link.href = applicant.resumeUrl!
       link.download = `${applicant.fullName.replace(/\s+/g, '_')}_Resume.pdf`;
       document.body.appendChild(link);
       link.click();

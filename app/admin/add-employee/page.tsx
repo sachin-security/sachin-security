@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import ProfilePhotoUpload from '@/app/components/uploadPP';
 
 export default function AddEmployeePage() {
   const router = useRouter();
@@ -15,10 +16,14 @@ export default function AddEmployeePage() {
     // Personal Information
     fullName: '',
     fatherName: '',
+    motherName:'',
     dateOfBirth: '',
     gender: '',
     bloodGroup: '',
     maritalStatus: '',
+    profileUrl:'',
+    profileFilename:'',
+
     
     // Contact Information
     mobileNumber: '',
@@ -69,6 +74,9 @@ export default function AddEmployeePage() {
     const requiredFields = [
       { field: 'fullName', label: 'Full Name' },
       { field: 'fatherName', label: "Father's Name" },
+      { field: 'motherName', label: "Mother's Name" },
+      { field: 'profileUrl', label: "profile Url" },
+      { field: 'profileFilename', label: "Profile Name" },
       { field: 'dateOfBirth', label: 'Date of Birth' },
       { field: 'gender', label: 'Gender' },
       { field: 'mobileNumber', label: 'Mobile Number' },
@@ -132,6 +140,7 @@ export default function AddEmployeePage() {
 
     // Validate form
     if (!validateForm()) {
+        console.log(validateForm())
       return;
     }
 
@@ -198,7 +207,7 @@ export default function AddEmployeePage() {
         {/* Error Message */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
             <div>
               <h3 className="font-semibold text-red-900 mb-1">Validation Error</h3>
               <p className="text-red-700 text-sm">{error}</p>
@@ -209,6 +218,7 @@ export default function AddEmployeePage() {
         {/* Personal Information */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Personal Information</h2>
+           <ProfilePhotoUpload onUploadSuccess={(photoUrl ,filename)=>setFormData({ ...formData, profileUrl: photoUrl, profileFilename:filename })}/>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -232,6 +242,19 @@ export default function AddEmployeePage() {
                 required
                 value={formData.fatherName}
                 onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mother's Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.motherName}
+                onChange={(e) => setFormData({ ...formData, motherName: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>

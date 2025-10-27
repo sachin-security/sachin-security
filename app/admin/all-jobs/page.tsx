@@ -293,7 +293,7 @@ export default function AllJobsPage() {
                         <span>{job.type}</span>
                       </div>
                       <div className="flex items-center gap-2 text-gray-700">
-                        <DollarSign className="w-4 h-4 text-gray-400" />
+                        <p className="w-5 h-5 text-gray-400" >₹</p>
                         <span>{job.salary || 'Not specified'}</span>
                       </div>
                       <div className="flex items-center gap-2 text-gray-700">

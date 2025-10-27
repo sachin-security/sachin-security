@@ -194,7 +194,7 @@ function WhyJoinUsSection() {
       description: 'Work in a respectful and collaborative team environment'
     },
     {
-      icon: DollarSign,
+      icon: 'Rs.',
       title: 'Competitive Salary',
       description: 'Industry-leading compensation with timely payments and statutory benefits'
     }
@@ -293,7 +293,7 @@ function JobCard({ job, onApply }: { job: Job; onApply: (job: Job) => void }) {
               <span>{job.experience}</span>
             </div>
             <div className="flex items-center gap-2 text-slate-300">
-              <DollarSign className="w-5 h-5 text-amber-400 shrink-0" />
+              <p className="w-5 h-5 text-gray-400" >₹</p>
               <span>{job.salary}</span>
             </div>
           </div>
@@ -404,12 +404,12 @@ function ApplicationModal({ job, onClose }: { job: Job; onClose: () => void }) {
     setError('');
     
     try {
-      // Validate resume upload
-      if (!formData.resumeUrl) {
-        setError('Please upload your resume');
-        setIsSubmitting(false);
-        return;
-      }
+      // optional  Validate resume upload
+    //   if (!formData.resumeUrl) {
+    //     setError('Please upload your resume');
+    //     setIsSubmitting(false);
+    //     return;
+    //   }
       
       const applicationData = {
         jobId: job.id,
@@ -620,7 +620,7 @@ function ApplicationModal({ job, onClose }: { job: Job; onClose: () => void }) {
               {/* Resume Upload */}
               <div>
                 <label className="block text-sm font-medium mb-2 text-slate-300">
-                  Upload Resume (PDF/DOC) <span className="text-red-400">*</span>
+                  Upload Resume (PDF/DOC) <span className="text-red-400"></span>
                 </label>
                 
                 {!formData.resumeUrl ? (

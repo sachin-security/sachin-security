@@ -38,6 +38,7 @@ export const downloadFile = async (
     
     // Create blob from chunks
     const blob = new Blob(chunks as BlobPart[]);
+    console.log(blob ,'ujhghbvcvbnm,.mnbvc')
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

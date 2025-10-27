@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     
     // Validate required fields
     const requiredFields = [
-      'fullName', 'fatherName', 'dateOfBirth', 'gender',
+      'fullName', 'fatherName', 'motherName', 'profileFilename', 'profileUrl','dateOfBirth', 'gender',
       'mobileNumber', 'currentAddress', 'city', 'state', 'pincode',
       'aadharNumber', 'panNumber', 'employeeId', 'designation',
       'department', 'joiningDate'
@@ -88,6 +88,9 @@ export async function POST(request: NextRequest) {
       // Personal Information
       fullName: body.fullName,
       fatherName: body.fatherName,
+      motherName:body.motherName,
+      profileFilename:body.profileFilename,
+      profileUrl:body.profileUrl,
       dateOfBirth: body.dateOfBirth,
       gender: body.gender,
       bloodGroup: body.bloodGroup || '',
