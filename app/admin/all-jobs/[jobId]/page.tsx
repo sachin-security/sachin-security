@@ -96,12 +96,12 @@ export default function JobApplicantsPage() {
   // Update applicant status via API
   const handleStatusUpdate = async (applicantId: string, newStatus: string) => {
     try {
-      const response = await fetch(`/api/applicants/${applicantId}`, {
-        method: 'PUT',
+      const response = await fetch(`/api/applicants`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({id:applicantId, status: newStatus }),
       });
 
       const data = await response.json();

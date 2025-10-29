@@ -386,13 +386,13 @@ export default function SearchEmployeePage() {
                 : `Filtered from ${employees.length} total employees`}
             </p>
           </div>
-          <button
+          {/* <button
             onClick={handleExport}
             className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium flex items-center gap-2"
           >
             <Download className="w-4 h-4" />
             Export CSV
-          </button>
+          </button> */}
         </div>
 
         {/* Employee Table */}
@@ -444,12 +444,12 @@ export default function SearchEmployeePage() {
                         >
                           <Eye className="w-4 h-4 text-gray-600" />
                         </button>
-                        <button
+                        {/* <button
                           className="p-2 hover:bg-gray-100 rounded-lg"
                           title="Edit"
                         >
                           <Edit className="w-4 h-4 text-gray-600" />
-                        </button>
+                        </button> */}
                         <button
                           className="p-2 hover:bg-gray-100 rounded-lg"
                           title="Delete"

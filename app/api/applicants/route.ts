@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCollection } from '@/app/lib/db';
 
+
 // GET - Fetch applicants (with optional jobId filter)
 export async function GET(request: NextRequest) {
   try {
@@ -34,5 +35,28 @@ export async function GET(request: NextRequest) {
       { success: false, error: error.message },
       { status: 500 }
     );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const { id, status } = await request.json();
+    if (!id || !status) {
+      return NextResponse.json({ success: false, error: 'id and status are required' }, { status: 400 });
+    }
+
+    const collection = await getCollection('applicants');
+    const result = await collection.updateOne(
+      { id: id },
+      { $set: { status } }
+    );
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ success: false, error: 'Applicant not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Status updated successfully' });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

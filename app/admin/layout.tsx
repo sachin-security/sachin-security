@@ -23,10 +23,15 @@ export default function AdminLayout({
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleLogout = () => {
+  const handleLogout =async () => {
     // Implement logout logic
     if (confirm('Are you sure you want to logout?')) {
-      router.push('/');
+        fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ logOut:true }),
+      });
+      router.push('/admin/login');
     }
   };
 

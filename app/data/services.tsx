@@ -1,4 +1,4 @@
-import { ShieldCheck, Camera, Home ,Landmark, Search, Factory, Car, PartyPopper, HardHat, ShoppingBag, UserCheck, Lock, Building } from 'lucide-react';
+import { ShieldCheck, Camera,Landmark, Search, Factory, PartyPopper, HardHat, ShoppingBag, UserCheck, Lock, Building } from 'lucide-react';
 
 export interface Service {
   icon: any;
@@ -46,8 +46,7 @@ const services: Service[] = [
     icon: HardHat,
     title: "Construction Site Security",
     slug: "construction-site-security",
-    image:
-      "https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=800&q=80",
+    image:'/construction.jpg',
     shortDescription:
       "24/7 site security to protect assets, equipment, and personnel.",
     description: `We provide comprehensive security for construction sites, preventing theft, vandalism, and unauthorized access. Our guards verify credentials, monitor activities, and report any irregularities.`,
@@ -201,24 +200,6 @@ const services: Service[] = [
     industries: ["Banks", "Corporate", "Retail"],
     benefits: ["High deterrence", "Professional conduct"],
     keywords: ["armed guard", "unarmed guard", "security officer"],
-  },
-  {
-    icon: Home,
-    title: "Gated Community",
-    slug: "gated-community",
-    image:
-      "https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=800&q=80",
-    shortDescription:
-      "Comprehensive residential community security and visitor control.",
-    description: `We manage gate entries, CCTV monitoring, and patrolling to maintain a safe and peaceful residential environment.`,
-    features: [
-      "Visitor management",
-      "Patrolling & CCTV",
-      "Emergency response",
-    ],
-    industries: ["Apartments", "Housing Societies"],
-    benefits: ["Secure living environment"],
-    keywords: ["residential guard", "gated community security"],
   },
   {
     icon: Landmark,

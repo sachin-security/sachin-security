@@ -334,12 +334,12 @@ export default function AllJobsPage() {
                   {job.status === 'Active' ? 'Deactivate' : 'Activate'}
                 </button>
                 
-                <button
+                {/* <button
                   className="flex-1 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 font-semibold flex items-center justify-center gap-2"
                 >
                   <Edit className="w-4 h-4" />
                   Edit
-                </button>
+                </button> */}
                 
                 {/* <button
                   onClick={() => deleteJob(job.id)}

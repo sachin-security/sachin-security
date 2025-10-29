@@ -1,7 +1,7 @@
 // app/admin/support-messages/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, SelectHTMLAttributes } from 'react';
 import { Mail, Clock, CheckCircle, Loader2, Eye, Trash2, X } from 'lucide-react';
 
 interface SupportMessage {
@@ -62,6 +62,30 @@ export default function SupportMessagesPage() {
   const handleViewDetails = (message: SupportMessage) => {
     setSelectedMessage(message);
     setShowDetailsModal(true);
+  };
+
+  const handleStatuschange= async(message:SupportMessage, status:SupportMessage['status'])=>{
+    console.log(stats)
+    try {  
+      const response = await fetch(`/api/contact`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: status, id:message.id }),
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setMessages(prev =>
+        prev.map(m => (m.id === message.id ? { ...m, status } : m))
+    );
+      } else {
+        alert('Failed to Ticket job status');
+      }
+    } catch (error) {
+      console.error('Error ticket status:', error);
+    }
   };
 
   if (isLoading) {
@@ -175,15 +199,21 @@ export default function SupportMessagesPage() {
                       {new Date(message.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                        message.status === 'New'
-                          ? 'bg-blue-100 text-blue-800'
-                          : message.status === 'In Progress'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-green-100 text-green-800'
-                      }`}>
-                        {message.status}
-                      </span>
+                        <select
+                          value={message.status}
+                          onChange={(e)=>handleStatuschange(message,e.target.value as SupportMessage['status'] )}
+                          className={`px-3 py-1 text-xs font-medium rounded-full border-0 focus:ring-2 focus:ring-amber-500 ${
+                            message.status === 'New' 
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : message.status === 'In Progress'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-green-100 text-green-800'
+                          }`}
+                        >
+                          <option value="New">New</option>
+                          <option value="In Progress">In Progress</option>
+                          <option value="Resolved">Resolved</option>
+                        </select>
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-center gap-2">
