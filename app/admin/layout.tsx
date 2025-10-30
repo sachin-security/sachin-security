@@ -31,7 +31,7 @@ export default function AdminLayout({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ logOut:true }),
       });
-      router.push('/admin/login');
+     location.reload()
     }
   };
 

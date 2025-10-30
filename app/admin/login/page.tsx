@@ -32,8 +32,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ maxWidth: 320, margin: "50px auto", textAlign: "center" }}>
-      <h2>Login</h2>
+    <div style={{ maxWidth: 320, margin: "50px auto", textAlign: "center" , backgroundColor:'white'}}>
+      <h2 className="text-black">Login</h2>
       <form onSubmit={handleSubmit}>
         <input
           type="text"
@@ -41,7 +41,7 @@ export default function LoginPage() {
           value={userID}
           onChange={(e) => setUserId(e.target.value)}
           required
-          style={{ width: "100%", padding: 8, marginBottom: 10 }}
+          style={{ width: "100%", padding: 8, marginBottom: 10 , border:'1px solid gray', color:'black' }}
         />
         <input
           type="password"
@@ -49,7 +49,7 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          style={{ width: "100%", padding: 8, marginBottom: 10 }}
+          style={{ width: "100%", padding: 8, marginBottom: 10 ,border:'1px solid gray', color:'black'}}
         />
         <button
           type="submit"
