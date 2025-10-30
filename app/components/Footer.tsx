@@ -114,18 +114,18 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             {/* Social Links */}
             <div className="flex gap-4">
-              <a href="#" className="w-10 h-10 rounded-full bg-slate-900 hover:bg-amber-400 flex items-center justify-center text-slate-400 hover:text-slate-950 transition-all duration-300 hover:scale-110">
+              {/* <a href="#" className="w-10 h-10 rounded-full bg-slate-900 hover:bg-amber-400 flex items-center justify-center text-slate-400 hover:text-slate-950 transition-all duration-300 hover:scale-110">
                 <Facebook className="w-5 h-5" />
-              </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-slate-900 hover:bg-amber-400 flex items-center justify-center text-slate-400 hover:text-slate-950 transition-all duration-300 hover:scale-110">
+              </a> */}
+              {/* <a href="#" className="w-10 h-10 rounded-full bg-slate-900 hover:bg-amber-400 flex items-center justify-center text-slate-400 hover:text-slate-950 transition-all duration-300 hover:scale-110">
                 <Twitter className="w-5 h-5" />
-              </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-slate-900 hover:bg-amber-400 flex items-center justify-center text-slate-400 hover:text-slate-950 transition-all duration-300 hover:scale-110">
+              </a> */}
+              <a href="https://www.linkedin.com/in/aniket-singh-247953290?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" className="w-10 h-10 rounded-full bg-slate-900 hover:bg-amber-400 flex items-center justify-center text-slate-400 hover:text-slate-950 transition-all duration-300 hover:scale-110">
                 <Linkedin className="w-5 h-5" />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-slate-900 hover:bg-amber-400 flex items-center justify-center text-slate-400 hover:text-slate-950 transition-all duration-300 hover:scale-110">
+              {/* <a href="#" className="w-10 h-10 rounded-full bg-slate-900 hover:bg-amber-400 flex items-center justify-center text-slate-400 hover:text-slate-950 transition-all duration-300 hover:scale-110">
                 <Instagram className="w-5 h-5" />
-              </a>
+              </a> */}
             </div>
 
             {/* Copyright */}
