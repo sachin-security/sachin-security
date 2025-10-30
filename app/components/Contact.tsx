@@ -271,7 +271,7 @@ export default function SuspenseWrapper() {
                   </a>
                   <br />
                   <a href="tel:+919825011131" className="text-slate-400 hover:text-amber-400 transition-colors">
-                    +91 9825011131
+                    +91 9537594397
                   </a>
                 </div>
               </div>
@@ -280,8 +280,8 @@ export default function SuspenseWrapper() {
                 <Mail className="w-6 h-6 text-amber-400 mt-1 flex-shrink-0" />
                 <div>
                   <h3 className="font-semibold text-lg mb-1 text-white">Email</h3>
-                  <a href="mailto:sachinsecurity@yahoo.co.in" className="text-slate-400 hover:text-amber-400 transition-colors">
-                    sachinsecurity@yahoo.co.in
+                  <a href="mailto: info@sachinsecurity.co.in" className="text-slate-400 hover:text-amber-400 transition-colors">
+                    info@sachinsecurity.co.in
                   </a>
                 </div>
               </div>
@@ -291,8 +291,8 @@ export default function SuspenseWrapper() {
                 <div>
                   <h3 className="font-semibold text-lg mb-1 text-white">Office</h3>
                   <p className="text-slate-400">
-                    104, Sapphire Complex, Salatwada,<br />
-                    Vadodara - 390001, Gujarat, India
+                    401, One Indiabulls Park, Jetalpur Rd<br />
+                    Vadodara - 390007, Gujarat, India
                   </p>
                 </div>
               </div>

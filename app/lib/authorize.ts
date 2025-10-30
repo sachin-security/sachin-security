@@ -13,7 +13,7 @@ export default async function verifyUser(req: NextRequest) {
     // Verify JWT
     const user= await jwtVerify(token, SECRET);
     console.log("user verified by verifyuser" ,user)
-    return user.payload as {userID:string}
+    return user.payload
   } catch(e) {
     console.log("Failed at verifyuser", e)
     return e

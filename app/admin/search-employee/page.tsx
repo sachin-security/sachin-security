@@ -33,7 +33,7 @@ export default function SearchEmployeePage() {
   
   // Filter states
   const [filters, setFilters] = useState({
-    city: '',
+    workLocation: '',
     state: '',
     gender: '',
     department: '',
@@ -104,7 +104,7 @@ export default function SearchEmployeePage() {
         params.append('search', searchQuery);
         params.append('searchBy', searchBy);
       }
-      if (filters.city) params.append('city', filters.city);
+      if (filters.workLocation) params.append('workLocation', filters.workLocation);
       if (filters.state) params.append('state', filters.state);
       if (filters.gender) params.append('gender', filters.gender);
       if (filters.department) params.append('department', filters.department);
@@ -127,7 +127,7 @@ export default function SearchEmployeePage() {
   // Clear filters
   const clearFilters = () => {
     setFilters({
-      city: '',
+      workLocation: '',
       state: '',
       gender: '',
       department: '',
@@ -141,7 +141,7 @@ export default function SearchEmployeePage() {
   };
 
   // Get unique values for filter dropdowns
-  const uniqueCities = [...new Set(employees.map(emp => emp.city))];
+  const uniqueCities = [...new Set(employees.map(emp => emp.workLocation))];
   const uniqueStates = [...new Set(employees.map(emp => emp.state))];
   const uniqueDepartments = [...new Set(employees.map(emp => emp.department))];
   const uniqueDesignations = [...new Set(employees.map(emp => emp.designation))];
@@ -281,13 +281,13 @@ export default function SearchEmployeePage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             {/* City Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Work Location</label>
               <select
-                value={filters.city}
-                onChange={(e) => setFilters({ ...filters, city: e.target.value })}
+                value={filters.workLocation}
+                onChange={(e) => setFilters({ ...filters, workLocation: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
               >
-                <option value="">All Cities</option>
+                <option value="">All Work Location</option>
                 {uniqueCities.map(city => (
                   <option key={city} value={city}>{city}</option>
                 ))}
@@ -302,7 +302,7 @@ export default function SearchEmployeePage() {
                 onChange={(e) => setFilters({ ...filters, state: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
               >
-                <option value="">All States</option>
+                <option value="">All Living States</option>
                 {uniqueStates.map(state => (
                   <option key={state} value={state}>{state}</option>
                 ))}
@@ -404,7 +404,7 @@ export default function SearchEmployeePage() {
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Designation</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Department</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Location</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Work Location</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Gender</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Joining Date</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
@@ -427,7 +427,7 @@ export default function SearchEmployeePage() {
                     <td className="px-4 py-3 text-sm text-gray-900">{employee.fullName}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{employee.designation}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{employee.department}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{employee.city}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{employee.workLocation}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{employee.gender}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{employee.joiningDate}</td>
                     <td className="px-4 py-3">

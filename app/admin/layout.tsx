@@ -59,7 +59,7 @@ const navItems = [
             >
               {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
-            <Link href='/' className="text-xl font-bold text-gray-900">
+            <Link href='/admin/login' className="text-xl font-bold text-gray-900">
               Sachin Security <span className="text-amber-600">Admin</span>
             </Link>
           </div>

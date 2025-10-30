@@ -4,6 +4,7 @@
 import { useInView } from 'react-intersection-observer';
 import { Shield, Award, Users, Clock, CheckCircle, Calendar, MapPin, Building2, FileText, Scale } from 'lucide-react';
 import Image from 'next/image';
+import Alcertimg from '@/app/components/allcertifiacte';
 
 export default function AboutUsPage() {
   const { ref: heroRef, inView: heroInView } = useInView({
@@ -219,10 +220,10 @@ function CompanyPresence() {
   });
 
   const states = [
-    { name: 'Gujarat', license: 'License No: GJ/BD/21618', color: 'from-amber-500 to-yellow-600' },
-    { name: 'Uttar Pradesh', license: 'License No: 191164', color: 'from-amber-600 to-orange-600' },
-    { name: 'Madhya Pradesh', license: 'License No: N-186/16', color: 'from-yellow-500 to-amber-500' },
-    { name: 'Rajasthan', license: 'Licensed Operations', color: 'from-amber-500 to-yellow-500' }
+    { name: 'Gujarat', license: '', color: 'from-amber-500 to-yellow-600' },
+    { name: 'Uttar Pradesh', license: '', color: 'from-amber-600 to-orange-600' },
+    { name: 'Madhya Pradesh', license: '', color: 'from-yellow-500 to-amber-500' },
+    { name: 'Rajasthan', license: '', color: 'from-amber-500 to-yellow-500' }
   ];
 
   return (
@@ -267,6 +268,7 @@ function CompanyPresence() {
             );
           })}
         </div>
+        <Alcertimg/>
 
         {/* Registration Details */}
         <div className="mt-16 max-w-4xl mx-auto bg-slate-950 p-8 rounded-2xl border border-slate-800">

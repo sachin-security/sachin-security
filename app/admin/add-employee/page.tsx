@@ -86,10 +86,15 @@ export default function AddEmployeePage() {
       { field: 'pincode', label: 'PIN Code' },
       { field: 'aadharNumber', label: 'Aadhar Number' },
       { field: 'panNumber', label: 'PAN Number' },
+      { field: 'uanNumber', label: 'UAN Number' },
       { field: 'employeeId', label: 'Employee ID' },
+      { field: 'workLocation', label: 'Working Loacation' },
       { field: 'designation', label: 'Designation' },
       { field: 'department', label: 'Department' },
-      { field: 'joiningDate', label: 'Joining Date' }
+      { field: 'joiningDate', label: 'Joining Date' },
+      { field: 'bankName', label: 'Nank Name' },
+      { field: 'accountNumber', label: 'A/C Number' },
+      { field: 'ifscCode', label: 'IFSC code' }
     ];
 
     for (const { field, label } of requiredFields) {
@@ -546,10 +551,11 @@ export default function AddEmployeePage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Work Location
+                Work Location <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
+                required
                 value={formData.workLocation}
                 onChange={(e) => setFormData({ ...formData, workLocation: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
@@ -624,10 +630,11 @@ export default function AddEmployeePage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                UAN Number
+                UAN Number <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
+                required
                 value={formData.uanNumber}
                 onChange={(e) => setFormData({ ...formData, uanNumber: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
@@ -642,10 +649,11 @@ export default function AddEmployeePage() {
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Bank Name
+                Bank Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
+                required
                 value={formData.bankName}
                 onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
@@ -654,10 +662,11 @@ export default function AddEmployeePage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Account Number
+                Account Number <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
+                required
                 value={formData.accountNumber}
                 onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
@@ -666,10 +675,11 @@ export default function AddEmployeePage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                IFSC Code
+                IFSC Code <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
+                required
                 value={formData.ifscCode}
                 onChange={(e) => setFormData({ ...formData, ifscCode: e.target.value.toUpperCase() })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"

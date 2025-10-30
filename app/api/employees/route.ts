@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
     const searchBy = searchParams.get('searchBy') || 'name';
-    const city = searchParams.get('city');
+    const workLocation = searchParams.get('workLocation');
     const gender = searchParams.get('gender');
     const department = searchParams.get('department');
     
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Additional filters
-    if (city) query.city = city;
+    if (workLocation) query.workLocation = workLocation;
     if (gender) query.gender = gender;
     if (department) query.department = department;
     
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       'fullName', 'fatherName', 'motherName', 'profileFilename', 'profileUrl','dateOfBirth', 'gender',
       'mobileNumber', 'currentAddress', 'city', 'state', 'pincode',
       'aadharNumber', 'panNumber', 'employeeId', 'designation',
-      'department', 'joiningDate'
+      'department', 'joiningDate', 'uanNumber', 'ifscCode' , 'accountNumber' , 'bankName' ,'workLocation'
     ];
     
     for (const field of requiredFields) {

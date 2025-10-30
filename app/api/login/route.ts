@@ -26,9 +26,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Find user
-    const users= [{userID:'sss', password:'12345' ,userName:'Aniket'}]
-    console.log(users)
+    const users= [{userID:'sss', password:'12345' ,userName:'Aniket' , role:'superadmin'} ,{userID:'sub', password:'12345' ,userName:'Sunny' , role:'subadmin'}]
     const user = users.find(u => u.userID === userID && u.password === password);
+    console.log(user)
     if (!user) {
       return NextResponse.json(
         { error: "Invalid credentials" },
@@ -37,9 +37,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Create JWT
-    const token = await new SignJWT({ userID: user.userID, userName: user.userName })
+    const token = await new SignJWT({ userID: user.userID, userName: user.userName ,role:user.role})
       .setProtectedHeader({ alg: "HS256" })
-      .setExpirationTime("1h")
+      .setExpirationTime("1d")
       .sign(SECRET);
 
     // Set HttpOnly cookie
