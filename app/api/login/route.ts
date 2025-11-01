@@ -13,15 +13,7 @@ export async function POST(req: NextRequest) {
     if (logOut){
     console.log('loggingout')
     const res = NextResponse.json({message:"Logout Successfully"});
-    res.cookies.set({
-      name: "authToken",
-      value: '',
-      httpOnly: true,
-      path: "/",
-      maxAge: 60 * 60*12, // 1 day
-      sameSite: "lax",
-    });
-
+    res.cookies.delete({name: "authToken"});
     return res;
     }
 
