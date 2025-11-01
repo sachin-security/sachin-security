@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCollection } from '@/app/lib/db';
 
+//aply jobs
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -15,8 +16,6 @@ export async function POST(request: NextRequest) {
       'phone',
       'dateOfBirth',
       'education',
-      'experience',
-      'address'
     ];
     
     for (const field of requiredFields) {

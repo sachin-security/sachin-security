@@ -68,15 +68,15 @@ export default function SuspenseWrapper() {
       return false;
     }
 
-    if (!formData.message.trim()) {
-      setError('Message is required');
-      return false;
-    }
+    // if (!formData.message.trim()) {
+    //   setError('Message is required');
+    //   return false;
+    // }
 
-    if (formData.message.length < 10) {
-      setError('Message must be at least 10 characters long');
-      return false;
-    }
+    // if (formData.message.length < 10) {
+    //   setError('Message must be at least 10 characters long');
+    //   return false;
+    // }
 
     return true;
   };
@@ -205,10 +205,9 @@ export default function SuspenseWrapper() {
               
               <div>
                 <label className="block text-sm font-medium mb-2 text-slate-300">
-                  Message <span className="text-red-400">*</span>
+                  Message 
                 </label>
                 <textarea
-                  required
                   rows={4}
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}

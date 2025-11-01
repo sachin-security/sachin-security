@@ -565,10 +565,9 @@ function ApplicationModal({ job, onClose }: { job: Job; onClose: () => void }) {
 
               <div>
                 <label className="block text-sm font-medium mb-2 text-slate-300">
-                  Address <span className="text-red-400">*</span>
+                  Address 
                 </label>
                 <textarea
-                  required
                   rows={3}
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -603,13 +602,12 @@ function ApplicationModal({ job, onClose }: { job: Job; onClose: () => void }) {
 
               <div>
                 <label className="block text-sm font-medium mb-2 text-slate-300">
-                  Total Experience (Years) <span className="text-red-400">*</span>
+                  Total Experience (Years)
                 </label>
                 <input
                   type="number"
                   min="0"
                   step="0.5"
-                  required
                   value={formData.experience}
                   onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg focus:outline-none focus:border-amber-400 transition-colors text-white"
@@ -620,7 +618,7 @@ function ApplicationModal({ job, onClose }: { job: Job; onClose: () => void }) {
               {/* Resume Upload */}
               <div>
                 <label className="block text-sm font-medium mb-2 text-slate-300">
-                  Upload Resume (PDF/DOC) <span className="text-red-400"></span>
+                  Upload Resume (PDF/DOC) 
                 </label>
                 
                 {!formData.resumeUrl ? (

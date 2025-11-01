@@ -26,10 +26,10 @@ export default function Hero() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
-            <button className="group bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(251,191,36,0.4)] flex items-center justify-center gap-2">
+            <Link href='/#contact' className="group bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(251,191,36,0.4)] flex items-center justify-center gap-2">
               Get Protected Today
               <ArrowRight className="group-hover:translate-x-1 transition-transform" />
-            </button>
+            </Link>
             
             <Link href='/about-us' className="border-2 text-white border-amber-400 hover:bg-amber-400/10 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:scale-105">
               Learn More
