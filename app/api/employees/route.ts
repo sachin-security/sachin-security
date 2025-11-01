@@ -56,9 +56,8 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     const requiredFields = [
       'fullName', 'fatherName', 'motherName', 'profileFilename', 'profileUrl','dateOfBirth', 'gender',
-      'mobileNumber', 'currentAddress', 'city', 'state', 'pincode',
-      'aadharNumber', 'panNumber', 'employeeId', 'designation',
-      'department', 'joiningDate', 'uanNumber', 'ifscCode' , 'accountNumber' , 'bankName' ,'workLocation'
+      'mobileNumber', 'permanentAddress', 'city', 'state', 'pincode',
+      'aadharNumber', 'joiningDate', 'uanNumber', 'ifscCode' , 'accountNumber' , 'bankName' ,'workLocation'
     ];
     
     for (const field of requiredFields) {
@@ -74,12 +73,12 @@ export async function POST(request: NextRequest) {
     
     // Check if employee ID already exists
     const existingEmployee = await collection.findOne({ 
-      employeeId: body.employeeId 
+      aadharNumber: body.aadharNumber
     });
     
     if (existingEmployee) {
       return NextResponse.json(
-        { success: false, error: 'Employee ID already exists' },
+        { success: false, error: 'Employee already exists with this Aadhar' },
         { status: 400 }
       );
     }

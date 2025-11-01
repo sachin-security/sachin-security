@@ -30,32 +30,32 @@ export default function AddJobPage() {
       setError('Job title is required');
       return false;
     }
-    if (!formData.department.trim()) {
-      setError('Department is required');
-      return false;
-    }
+    // if (!formData.department.trim()) {
+    //   setError('Department is required');
+    //   return false;
+    // }
     if (!formData.location.trim()) {
       setError('Location is required');
       return false;
     }
-    if (!formData.description.trim()) {
-      setError('Job description is required');
-      return false;
-    }
+    // if (!formData.description.trim()) {
+    //   setError('Job description is required');
+    //   return false;
+    // }
 
     // Validate eligibility criteria
-    const validEligibility = formData.eligibility.filter(item => item.trim() !== '');
-    if (validEligibility.length === 0) {
-      setError('At least one eligibility criterion is required');
-      return false;
-    }
+    // const validEligibility = formData.eligibility.filter(item => item.trim() !== '');
+    // if (validEligibility.length === 0) {
+    //   setError('At least one eligibility criterion is required');
+    //   return false;
+    // }
 
     // Validate responsibilities
-    const validResponsibilities = formData.responsibilities.filter(item => item.trim() !== '');
-    if (validResponsibilities.length === 0) {
-      setError('At least one responsibility is required');
-      return false;
-    }
+    // const validResponsibilities = formData.responsibilities.filter(item => item.trim() !== '');
+    // if (validResponsibilities.length === 0) {
+    //   setError('At least one responsibility is required');
+    //   return false;
+    // }
 
     return true;
   };
@@ -184,11 +184,10 @@ export default function AddJobPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Department <span className="text-red-500">*</span>
+                Department 
               </label>
               <input
                 type="text"
-                required
                 value={formData.department}
                 onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
@@ -212,7 +211,7 @@ export default function AddJobPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Job Type <span className="text-red-500">*</span>
+                Job Type 
               </label>
               <select
                 value={formData.type}
@@ -256,10 +255,10 @@ export default function AddJobPage() {
         {/* Description */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Job Description <span className="text-red-500">*</span>
+            Job Description 
           </label>
           <textarea
-            required
+           
             rows={4}
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -275,7 +274,7 @@ export default function AddJobPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-900">
-              Eligibility Criteria <span className="text-red-500">*</span>
+              Eligibility Criteria 
             </h2>
             <button
               type="button"
@@ -313,7 +312,7 @@ export default function AddJobPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-900">
-              Responsibilities <span className="text-red-500">*</span>
+              Responsibilities 
             </h2>
             <button
               type="button"

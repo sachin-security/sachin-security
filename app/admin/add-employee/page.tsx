@@ -80,17 +80,17 @@ export default function AddEmployeePage() {
       { field: 'dateOfBirth', label: 'Date of Birth' },
       { field: 'gender', label: 'Gender' },
       { field: 'mobileNumber', label: 'Mobile Number' },
-      { field: 'currentAddress', label: 'Current Address' },
+      { field: 'permanentAddress', label: 'Permanent Address' },
       { field: 'city', label: 'City' },
       { field: 'state', label: 'State' },
       { field: 'pincode', label: 'PIN Code' },
       { field: 'aadharNumber', label: 'Aadhar Number' },
-      { field: 'panNumber', label: 'PAN Number' },
+    //   { field: 'panNumber', label: 'PAN Number' },
       { field: 'uanNumber', label: 'UAN Number' },
-      { field: 'employeeId', label: 'Employee ID' },
+    //   { field: 'employeeId', label: 'Employee ID' },
       { field: 'workLocation', label: 'Working Loacation' },
-      { field: 'designation', label: 'Designation' },
-      { field: 'department', label: 'Department' },
+    //   { field: 'designation', label: 'Designation' },
+    //   { field: 'department', label: 'Department' },
       { field: 'joiningDate', label: 'Joining Date' },
       { field: 'bankName', label: 'Nank Name' },
       { field: 'accountNumber', label: 'A/C Number' },
@@ -111,13 +111,13 @@ export default function AddEmployeePage() {
     }
 
     // Validate PAN (ABCDE1234F format)
-    if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panNumber)) {
-      setError('PAN number format is invalid (e.g., ABCDE1234F)');
-      return false;
-    }
+    // if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.panNumber)) {
+    //   setError('PAN number format is invalid (e.g., ABCDE1234F)');
+    //   return false;
+    // }
 
     // Validate mobile number (10 digits)
-    if (!/^[6-9]\d{9}$/.test(formData.mobileNumber.replace(/[\s+-]/g, ''))) {
+    if (formData.mobileNumber.length<10) {
       setError('Mobile number must be a valid 10-digit Indian number');
       return false;
     }
@@ -376,10 +376,22 @@ export default function AddEmployeePage() {
 
             <div className="md:col-span-2 lg:col-span-3">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Current Address <span className="text-red-500">*</span>
+                Permanent Address as Per Aadhar <span className="text-red-500">*</span>
               </label>
               <textarea
                 required
+                rows={2}
+                value={formData.permanentAddress}
+                onChange={(e) => setFormData({ ...formData, permanentAddress: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+
+            <div className="md:col-span-2 lg:col-span-3">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Current Address 
+              </label>
+              <textarea
                 rows={2}
                 value={formData.currentAddress}
                 onChange={(e) => setFormData({ ...formData, currentAddress: e.target.value })}
@@ -387,17 +399,6 @@ export default function AddEmployeePage() {
               />
             </div>
 
-            <div className="md:col-span-2 lg:col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Permanent Address
-              </label>
-              <textarea
-                rows={2}
-                value={formData.permanentAddress}
-                onChange={(e) => setFormData({ ...formData, permanentAddress: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -463,11 +464,10 @@ export default function AddEmployeePage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                PAN Number <span className="text-red-500">*</span>
+                PAN Number
               </label>
               <input
                 type="text"
-                required
                 maxLength={10}
                 value={formData.panNumber}
                 onChange={(e) => setFormData({ ...formData, panNumber: e.target.value.toUpperCase() })}
@@ -484,11 +484,10 @@ export default function AddEmployeePage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Employee ID <span className="text-red-500">*</span>
+                Employee ID
               </label>
               <input
                 type="text"
-                required
                 value={formData.employeeId}
                 onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
@@ -497,11 +496,10 @@ export default function AddEmployeePage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Designation <span className="text-red-500">*</span>
+                Designation 
               </label>
               <input
                 type="text"
-                required
                 value={formData.designation}
                 onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
@@ -510,11 +508,10 @@ export default function AddEmployeePage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Department <span className="text-red-500">*</span>
+                Department
               </label>
               <input
                 type="text"
-                required
                 value={formData.department}
                 onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"

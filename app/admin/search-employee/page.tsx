@@ -400,7 +400,7 @@ export default function SearchEmployeePage() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Employee ID</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Aadhar No.</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Designation</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Department</th>
@@ -420,9 +420,9 @@ export default function SearchEmployeePage() {
                 </tr>
               ) : (
                 filteredEmployees.map((employee) => (
-                  <tr key={employee.employeeId} className="hover:bg-gray-50">
+                  <tr key={employee.aadharNumber} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                      {employee.employeeId}
+                      {employee.aadharNumber}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900">{employee.fullName}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{employee.designation}</td>
@@ -485,7 +485,6 @@ function EmployeeDetailsModal({
   employee: any;
   onClose: () => void;
 }) {
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
 
   const DetailRow = ({ label, value }: { label: string; value?: string }) => (
@@ -560,7 +559,7 @@ function EmployeeDetailsModal({
           {/* Address Details */}
           <Section title="Address Details">
             <DetailRow label="Current Address" value={employee.currentAddress} />
-            <DetailRow label="Permanent Address" value={employee.permanentAddress} />
+            <DetailRow label="Permanent Address as per Aadhar" value={employee.permanentAddress} />
             <DetailRow label="City" value={employee.city} />
             <DetailRow label="State" value={employee.state} />
             <DetailRow label="Pincode" value={employee.pincode} />
@@ -688,7 +687,8 @@ function DownloadEmppdf({
       addRow('Blood Group', employee.bloodGroup);
       addRow('Mobile', employee.mobileNumber);
       addRow('Email', employee.email);
-      addRow('Address', employee.currentAddress);
+      addRow('Address', employee.permanentAddress);
+      addRow('', employee.city +' - '+ employee.pincode +' , '+ employee.state);
 
       // Employment
       y += 5;
