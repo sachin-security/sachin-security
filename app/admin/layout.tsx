@@ -26,12 +26,12 @@ export default function AdminLayout({
   const handleLogout =async () => {
     // Implement logout logic
     if (confirm('Are you sure you want to logout?')) {
-        fetch("/api/login", {
+        await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ logOut:true }),
       });
-    //  location.reload()
+     location.reload()
     }
   };
 
