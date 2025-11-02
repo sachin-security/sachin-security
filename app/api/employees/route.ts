@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
     if (search) {
       if (searchBy === 'name') {
         query.fullName = { $regex: search, $options: 'i' };
-      } else if (searchBy === 'id') {
-        query.employeeId = { $regex: search, $options: 'i' };
+      } else if (searchBy === 'aadharNumber') {
+        query.aadharNumber = { $regex: search, $options: 'i' };
       }
     }
     

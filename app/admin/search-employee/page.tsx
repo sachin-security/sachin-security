@@ -24,7 +24,7 @@ interface Employee {
 
 export default function SearchEmployeePage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchBy, setSearchBy] = useState<'name' | 'id'>('name');
+  const [searchBy, setSearchBy] = useState<'name' | 'aadharNumber'>('name');
   const [isSearching, setIsSearching] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
@@ -216,11 +216,11 @@ export default function SearchEmployeePage() {
                 type="radio"
                 name="searchBy"
                 value="id"
-                checked={searchBy === 'id'}
-                onChange={(e) => setSearchBy('id')}
+                checked={searchBy === 'aadharNumber'}
+                onChange={(e) => setSearchBy('aadharNumber')}
                 className="w-4 h-4 text-amber-600 focus:ring-amber-500"
               />
-              <span className="text-gray-700 font-medium">Search by Employee ID</span>
+              <span className="text-gray-700 font-medium">Search by Aadhar No.</span>
             </label>
           </div>
 
