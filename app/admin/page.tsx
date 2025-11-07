@@ -22,21 +22,15 @@ export default function AdminDashboard() {
   const fetchDashboardStats = async () => {
     setIsLoading(true);
     try {
-      // Fetch jobs
-      const jobsResponse = await fetch('/api/jobs');
-      const jobsData = await jobsResponse.json();
-      
-      // Fetch employees
-      const employeesResponse = await fetch('/api/employees');
-      const employeesData = await employeesResponse.json();
-      
-      // Fetch applicants
-      const applicantsResponse = await fetch('/api/applicants');
-      const applicantsData = await applicantsResponse.json();
-      
-      // Fetch support messages
-      const messagesResponse = await fetch('/api/contact');
-      const messagesData = await messagesResponse.json();
+      // Fetch all data in parallel
+        const [jobsData, employeesData, applicantsData, messagesData] = await Promise.all([
+        fetch('/api/jobs').then(res => res.json()),
+        fetch('/api/employees').then(res => res.json()),
+        fetch('/api/applicants').then(res => res.json()),
+        fetch('/api/contact').then(res => res.json())
+        ]);
+
+     
       
       if (jobsData.success && employeesData.success && applicantsData.success && messagesData.success) {
         const activeJobs = jobsData.data.filter((job: any) => job.status === 'Active').length;
@@ -50,7 +44,9 @@ export default function AdminDashboard() {
           newMessages: newMessages
         });
       }
+      else throw new Error(jobsData.error || employeesData.error || applicantsData.error || messagesData.error)
     } catch (error) {
+      alert(error+ "Please reload..")
       console.error('Error fetching dashboard stats:', error);
     } finally {
       setIsLoading(false);

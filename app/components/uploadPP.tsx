@@ -111,7 +111,6 @@ export default function ProfilePhotoUpload({
 
   // Display priority: Local preview > Uploaded URL > Existing URL
   const displayImage = localPreview || uploadedUrl;
-  console.log(displayImage)
 
   return (
     <div className="w-full my-2 ">

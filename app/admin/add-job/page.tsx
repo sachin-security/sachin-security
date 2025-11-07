@@ -165,7 +165,7 @@ export default function AddJobPage() {
         )}
 
         {/* Basic Information */}
-        <div>
+        <div className='text-black'>
           <h2 className="text-xl font-bold text-gray-900 mb-4">Basic Information</h2>
           <div className="grid md:grid-cols-2 gap-4">
             <div>

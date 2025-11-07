@@ -1,7 +1,7 @@
 //this is middelw ware function which runn on every rewuet and return userID from valid token
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
-const SECRET = new TextEncoder().encode("supersecretkey");
+const SECRET = new TextEncoder().encode("@45##chinssecker54rtfygvhb");
 
 export default async function verifyUser(req: NextRequest) {
   const token = req.cookies.get("authToken")?.value;

@@ -196,7 +196,7 @@ export default function SearchEmployeePage() {
       </div>
 
       {/* Search Section */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6 text-black">
         <div className="flex flex-col gap-4">
           {/* Search By Toggle */}
           <div className="flex gap-4">
@@ -267,7 +267,7 @@ export default function SearchEmployeePage() {
 
       {/* Filters Panel */}
       {showFilters && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6 text-black">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-900">Filter Employees</h2>
             <button

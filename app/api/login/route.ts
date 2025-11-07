@@ -3,10 +3,13 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SignJWT } from "jose";
 
-const SECRET = new TextEncoder().encode("supersecretkey");
+interface Users{userID:string ,userName:string, role:string, password:string}
+
+const SECRET = new TextEncoder().encode("@45##chinssecker54rtfygvhb");
 
 export async function POST(req: NextRequest) {
   try {
+    const users:Users[]= JSON.parse(process.env.ADMIN_USERS!)
     const body = await req.json();
     const { userID, password ,logOut} = body;
 
@@ -26,7 +29,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Find user
-    const users= [{userID:'sss', password:'12345' ,userName:'Aniket' , role:'superadmin'} ,{userID:'sub', password:'12345' ,userName:'Sunny' , role:'subadmin'}]
     const user = users.find(u => u.userID === userID && u.password === password);
     console.log(user)
     if (!user) {
