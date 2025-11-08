@@ -1,7 +1,7 @@
 // lib/db.ts
 import clientPromise from './mongodb';
 
-const DB_NAME = 'sachinsecurity-db-01';
+const DB_NAME = 'sachin-security-01';
 
 export async function getDatabase() {
   const client = await clientPromise;
