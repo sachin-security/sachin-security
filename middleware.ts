@@ -38,5 +38,5 @@ export async function middleware(req: NextRequest) {
 
 // ✅ Only run on API routes
 export const config = {
-  matcher: ['/admin',"/api/:path((?!login|upload|apply-jobs).*)",'/admin/:path*',],
+  matcher: ['/admin',"/api/:path((?!login|contact|upload|apply-jobs).*)",'/admin/:path*',],
 };
