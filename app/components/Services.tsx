@@ -24,7 +24,7 @@ export default function Services( {customPadding}:{customPadding:number}) {
           }`}
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-4 text-amber-400">
-            Our Services
+            Our Security Services
           </h2>
           <p className="text-xl text-slate-400 max-w-2xl mx-auto">
             Comprehensive security solutions tailored to your needs
