@@ -25,7 +25,7 @@ export default function AdminDashboard() {
       // Fetch all data in parallel
         const [jobsData, employeesData, applicantsData, messagesData] = await Promise.all([
         fetch('/api/jobs').then(res => res.json()),
-        fetch('/api/employees').then(res => res.json()),
+        fetch('/api/employees?limit=1').then(res => res.json()),
         fetch('/api/applicants').then(res => res.json()),
         fetch('/api/contact').then(res => res.json())
         ]);
@@ -37,7 +37,7 @@ export default function AdminDashboard() {
         const newMessages = messagesData.data.filter((msg: any) => msg.status === 'New').length;
         
         setStats({
-          totalEmployees: employeesData.count || 0,
+          totalEmployees: employeesData.total ?? employeesData.count ?? 0,
           activeJobs: activeJobs,
           totalApplicants: applicantsData.count || 0,
           supportMessages: messagesData.count || 0,
