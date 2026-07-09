@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, X, Loader2, Download, Eye, Edit, Trash2, Mail } from 'lucide-react';
+import { Search, Filter, X, Loader2, Download, Eye, Edit, Trash2, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 
 interface Employee {
@@ -43,85 +43,90 @@ export default function SearchEmployeePage() {
     joiningDateTo: ''
   });
 
-  const [employees, setEmployees] = useState<Employee[]>([]);
   const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
 
-  // Fetch all employees on load
+  // Pagination state (server-side, 50 per page)
+  const PAGE_SIZE = 50;
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Filter dropdown options (distinct values fetched from server)
+  const [filterOptions, setFilterOptions] = useState<{
+    workLocations: string[];
+    states: string[];
+    departments: string[];
+    designations: string[];
+  }>({ workLocations: [], states: [], departments: [], designations: [] });
+
+  // Fetch first page + filter dropdown options on load
   useEffect(() => {
-    fetchEmployees();
+    loadFilterOptions();
+    loadEmployees(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fetch employees from API
-  const fetchEmployees = async () => {
-    setIsLoading(true);
+  // Fetch distinct values for the filter dropdowns (does not load all rows)
+  const loadFilterOptions = async () => {
     try {
-      const response = await fetch('/api/employees');
+      const response = await fetch('/api/employees?meta=filters');
       const data = await response.json();
-      
+      if (data.success && data.filters) {
+        setFilterOptions(data.filters);
+      }
+    } catch (error) {
+      console.error('Error fetching filter options:', error);
+    }
+  };
+
+  // Build query params from the current search + filter state for a given page
+  const buildParams = (targetPage: number) => {
+    const params = new URLSearchParams();
+    params.append('page', String(targetPage));
+    params.append('limit', String(PAGE_SIZE));
+    if (searchQuery.trim()) {
+      params.append('search', searchQuery);
+      params.append('searchBy', searchBy);
+    }
+    if (filters.workLocation) params.append('workLocation', filters.workLocation);
+    if (filters.state) params.append('state', filters.state);
+    if (filters.gender) params.append('gender', filters.gender);
+    if (filters.department) params.append('department', filters.department);
+    if (filters.designation) params.append('designation', filters.designation);
+    return params;
+  };
+
+  // Core loader: runs the query for the given params and updates the table + pagination
+  const runQuery = async (params: URLSearchParams) => {
+    setIsSearching(true);
+    try {
+      const response = await fetch(`/api/employees?${params.toString()}`);
+      const data = await response.json();
       if (data.success) {
-        setEmployees(data.data);
         setFilteredEmployees(data.data);
+        setTotal(data.total ?? data.data.length);
+        setTotalPages(data.totalPages ?? 1);
+        setPage(data.page ?? 1);
       }
     } catch (error) {
       console.error('Error fetching employees:', error);
     } finally {
+      setIsSearching(false);
       setIsLoading(false);
     }
   };
 
-  // Search functionality
-  const handleSearch = async () => {
-    setIsSearching(true);
-    
-    try {
-      const params = new URLSearchParams();
-      if (searchQuery.trim()) {
-        params.append('search', searchQuery);
-        params.append('searchBy', searchBy);
-      }
-      
-      const response = await fetch(`/api/employees?${params.toString()}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setFilteredEmployees(data.data);
-      }
-    } catch (error) {
-      console.error('Error searching employees:', error);
-    } finally {
-      setIsSearching(false);
-    }
+  const loadEmployees = (targetPage = 1) => runQuery(buildParams(targetPage));
+
+  // Search functionality (resets to first page)
+  const handleSearch = () => {
+    loadEmployees(1);
   };
 
-  // Apply filters
-  const applyFilters = async () => {
-    setIsSearching(true);
-    
-    try {
-      const params = new URLSearchParams();
-      
-      if (searchQuery.trim()) {
-        params.append('search', searchQuery);
-        params.append('searchBy', searchBy);
-      }
-      if (filters.workLocation) params.append('workLocation', filters.workLocation);
-      if (filters.state) params.append('state', filters.state);
-      if (filters.gender) params.append('gender', filters.gender);
-      if (filters.department) params.append('department', filters.department);
-      if (filters.designation) params.append('designation', filters.designation);
-      
-      const response = await fetch(`/api/employees?${params.toString()}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setFilteredEmployees(data.data);
-      }
-      setShowFilters(false);
-    } catch (error) {
-      console.error('Error applying filters:', error);
-    } finally {
-      setIsSearching(false);
-    }
+  // Apply filters (resets to first page)
+  const applyFilters = () => {
+    loadEmployees(1);
+    setShowFilters(false);
   };
 
   // Clear filters
@@ -137,14 +142,24 @@ export default function SearchEmployeePage() {
       joiningDateTo: ''
     });
     setSearchQuery('');
-    fetchEmployees();
+    // Reset to an unfiltered first page (don't read the just-reset state, build fresh params)
+    const params = new URLSearchParams();
+    params.append('page', '1');
+    params.append('limit', String(PAGE_SIZE));
+    runQuery(params);
   };
 
-  // Get unique values for filter dropdowns
-  const uniqueCities = [...new Set(employees.map(emp => emp.workLocation))];
-  const uniqueStates = [...new Set(employees.map(emp => emp.state))];
-  const uniqueDepartments = [...new Set(employees.map(emp => emp.department))];
-  const uniqueDesignations = [...new Set(employees.map(emp => emp.designation))];
+  // Change page (keeps current search + filters)
+  const goToPage = (targetPage: number) => {
+    if (targetPage < 1 || targetPage > totalPages || isSearching) return;
+    loadEmployees(targetPage);
+  };
+
+  // Filter dropdown options (from server distinct values)
+  const uniqueCities = filterOptions.workLocations;
+  const uniqueStates = filterOptions.states;
+  const uniqueDepartments = filterOptions.departments;
+  const uniqueDesignations = filterOptions.designations;
 
   // View employee details
   const handleViewDetails = (employee: any) => {
@@ -384,12 +399,12 @@ export default function SearchEmployeePage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-xl font-bold text-gray-900">
-              Search Results ({filteredEmployees.length})
+              Search Results ({total})
             </h2>
             <p className="text-gray-600 text-sm">
-              {filteredEmployees.length === employees.length 
-                ? 'Showing all employees' 
-                : `Filtered from ${employees.length} total employees`}
+              {total === 0
+                ? 'No employees found'
+                : `Showing ${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)} of ${total}`}
             </p>
           </div>
           {/* <button
@@ -459,6 +474,29 @@ export default function SearchEmployeePage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => goToPage(page - 1)}
+              disabled={page <= 1 || isSearching}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            >
+              <ChevronLeft className="w-4 h-4" /> Previous
+            </button>
+            <span className="text-sm text-gray-600 font-medium">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              onClick={() => goToPage(page + 1)}
+              disabled={page >= totalPages || isSearching}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            >
+              Next <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Employee Details Modal */}
@@ -671,7 +709,7 @@ function DownloadEmppdf({
       // Employee Photo (दाहिनी तरफ)
       if (employee.profileUrl) {
         try {
-          const imgData = await toBase64(employee.profileUrl);
+          const imgData = await compressImage(employee.profileUrl, 400, 0.7);
           pdf.addImage(imgData, 'JPEG', 160, 42, 30, 30); // y को थोड़ा नीचे (42) किया है
         } catch {}
       }
@@ -789,6 +827,7 @@ function DownloadEmppdf({
 
 import QRCode from "qrcode";
 import { Printer } from "lucide-react";
+import { createPortal } from "react-dom";
 
 
 interface IDCardModalProps {
@@ -797,28 +836,158 @@ interface IDCardModalProps {
   employee: any;
 }
 
+// इमेज को कैनवास से डाउनस्केल + JPEG कंप्रेस करता है ताकि PDF/प्रिंट का साइज छोटा रहे।
+// प्रोफाइल फोटो अक्सर 3-6MB की होती है; कार्ड/स्लिप पर उसे इतनी हाई-रेस की जरूरत नहीं।
+async function compressImage(url: string, maxSize = 400, quality = 0.7): Promise<string> {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  // blob से बना bitmap कैनवास को taint नहीं करता (CORS सुरक्षित)
+  const bitmap = await createImageBitmap(blob);
+  const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height));
+  const width = Math.round(bitmap.width * scale);
+  const height = Math.round(bitmap.height * scale);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return url;
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  return canvas.toDataURL('image/jpeg', quality);
+}
+
+// दोनों तरफ के ID कार्ड (फ्रंट + बैक) - स्क्रीन प्रीव्यू और प्रिंट पोर्टल दोनों में इस्तेमाल होते हैं
+function IdCardFaces({ employee, qrSrc, profileImg }: { employee: any; qrSrc: string; profileImg: string }) {
+  return (
+    <>
+      {/* 1. FRONT SIDE (सामने का भाग) */}
+      <div className="id-card w-[3.375in] h-[2.125in] bg-white border border-gray-300 rounded-xl shadow-md relative flex flex-col justify-between overflow-hidden text-black font-sans select-none shrink-0">
+        {/* टॉप बार (लोगो के साथ) */}
+        <div className="bg-zinc-900 text-white px-2 py-1.5 flex items-center gap-2">
+          <img
+            src="/logo.png"
+            alt="Logo"
+            className="w-6 h-6 rounded-full bg-white p-0.5 object-contain shrink-0"
+          />
+          <div className="flex-1 text-center pr-6">
+            <h1 className="text-[10px] font-bold uppercase tracking-wider leading-tight">Sachin Security Services</h1>
+            <p className="text-[6.5px] text-gray-300 tracking-wide uppercase mt-0.5">Identity Card</p>
+          </div>
+        </div>
+
+        {/* फोटो, मुख्य जानकारी और QR कोड */}
+        <div className="flex p-2.5 gap-2 items-center flex-1">
+          {/* प्रोफाइल फोटो */}
+          <div className="w-12 h-16 bg-gray-100 border border-zinc-400 rounded overflow-hidden shrink-0 shadow-sm">
+            {profileImg ? (
+              <img src={profileImg} alt="Emp Profile" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-[8px] text-gray-400 bg-gray-50">No Image</div>
+            )}
+          </div>
+
+          {/* डिटेल्स */}
+          <div className="text-left leading-tight overflow-hidden flex-1 min-w-0">
+            <h2 className="text-[11px] font-bold text-zinc-900 uppercase truncate">{employee.fullName}</h2>
+            <p className="text-[8.5px] font-semibold text-amber-600 mb-0.5 truncate">{employee.designation}</p>
+
+            <p className="text-[7.5px] text-gray-600 truncate"><span className="font-bold text-gray-700">Emp Id:</span> {employee.employeeId}</p>
+            <p className="text-[7.5px] text-gray-600 truncate"><span className="font-bold text-gray-700">DOJ:</span> {employee.joiningDate || 'N/A'}</p>
+            <p className="text-[7.5px] text-gray-600 truncate"><span className="font-bold text-gray-700">Location:</span> {employee.workLocation || 'N/A'}</p>
+            <p className="text-[7.5px] text-gray-600 truncate"><span className="font-bold text-gray-700">Blood Gp:</span> {employee.bloodGroup || 'N/A'}</p>
+            <p className="text-[7.5px] text-gray-600 truncate"><span className="font-bold text-gray-700">Mobile:</span> {employee.mobileNumber}</p>
+          </div>
+
+          {/* QR कोड (दाईं तरफ) */}
+          <div className="shrink-0 flex flex-col items-center">
+            {qrSrc && (
+              <img src={qrSrc} alt="Verification QR" className="w-[46px] h-[46px] border border-gray-200 rounded" />
+            )}
+            <p className="text-[5px] text-gray-500 mt-0.5 uppercase tracking-wide text-center leading-none">Scan to<br />verify</p>
+          </div>
+        </div>
+
+        {/* बॉटम डिजाइन लाइन */}
+        <div className="bg-amber-600 h-1.5 w-full"></div>
+      </div>
+
+      {/* 2. BACK SIDE (पीछे का भाग - कंपनी विवरण के साथ) */}
+      <div className="id-card w-[3.375in] h-[2.125in] bg-zinc-900 border border-zinc-800 rounded-xl shadow-md relative flex flex-col justify-between p-3 text-white font-sans select-none shrink-0">
+
+        {/* हेडर: लोगो और कंपनी नाम */}
+        <div className="flex items-center justify-center gap-2 border-b border-white/10 pb-1.5">
+          <img
+            src="/logo.png"
+            alt="Company Logo"
+            className="w-6 h-6 rounded-full bg-white p-0.5 object-contain shrink-0"
+          />
+          <h3 className="text-[9px] font-bold text-amber-500 uppercase tracking-wide">Sachin Security Services</h3>
+        </div>
+
+        {/* कंपनी संपर्क विवरण */}
+        <div className="text-center px-1">
+          <p className="text-[6.5px] font-bold text-white uppercase tracking-wider">Corporate Office</p>
+          <p className="text-[6.5px] text-gray-300 mt-0.5 leading-snug">
+            410, 411, Oneindiabulls, Nr. Jetalpur Over Bridge,<br />
+            Jetalpur, Vadodara - 390007
+          </p>
+          <p className="text-[6.5px] text-gray-300 mt-1 leading-snug">
+            +91 6357889701 &nbsp;|&nbsp; info@sachinsecurity.co.in<br />
+            www.sachinsecurity.co.in
+          </p>
+        </div>
+
+        {/* निर्देश (1-2 लाइन) */}
+        <p className="text-[6px] text-gray-400 text-center px-2 leading-normal">
+          This card is the property of Sachin Security Services and is non-transferable. If found, please return it to the corporate office above.
+        </p>
+
+        {/* सिग्नेचर एरिया */}
+        <div className="flex justify-between items-end text-[7.5px] px-1 text-gray-400">
+          <p className="border-t border-gray-600 pt-1 px-1">Authorized Signatory</p>
+          <p className="font-mono text-[7px] text-amber-500">{employee.employeeId}</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
 function IDCardModal({ isOpen, onClose, employee }: IDCardModalProps) {
   const [qrSrc, setQrSrc] = useState<string>("");
+  const [profileImg, setProfileImg] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
+  const [mounted, setMounted] = useState<boolean>(false);
+
+  // पोर्टल केवल क्लाइंट पर रेंडर करें (SSR पर document उपलब्ध नहीं होता)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!isOpen || !employee) return;
 
     setLoading(true);
-    // लाइव वेरिफिकेशन के लिए QR कोड का लिंक तैयार करें
-    const profileLink = `${window.location.origin}/employees/${employee.employeeId}`;
-    console.log(profileLink)
+    setProfileImg("");
+    // लाइव वेरिफिकेशन के लिए QR कोड का लिंक तैयार करें (एन्क्रिप्टेड टोकन के साथ)
+    const profileLink = `${window.location.origin}/employees/${employee.idToken}`;
 
-    // QR कोड इमेज (Base64) जेनरेट करें
-    QRCode.toDataURL(profileLink, { width: 200, margin: 1 })
-      .then((url) => {
-        setQrSrc(url);
+    (async () => {
+      try {
+        // QR कोड और कंप्रेस्ड प्रोफाइल फोटो साथ-साथ तैयार करें
+        const [qr, img] = await Promise.all([
+          QRCode.toDataURL(profileLink, { width: 200, margin: 1 }),
+          employee.profileUrl
+            ? compressImage(employee.profileUrl, 300, 0.7).catch(() => employee.profileUrl)
+            : Promise.resolve(""),
+        ]);
+        setQrSrc(qr);
+        setProfileImg(img);
+      } catch (err) {
+        console.error("ID card asset error:", err);
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        console.error("QR Code Error:", err);
-        setLoading(false);
-      });
+      }
+    })();
   }, [isOpen, employee]);
 
   // अगर मॉडल ओपन नहीं है या कर्मचारी का डेटा नहीं है तो कुछ न दिखाएं
@@ -829,12 +998,12 @@ function IDCardModal({ isOpen, onClose, employee }: IDCardModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 no-print-backdrop text-black">
-      {/* मॉडल का मुख्य बॉक्स */}
-      <div className="bg-white rounded-2xl p-6 w-full max-w-2xl shadow-2xl relative border border-gray-200 modal-container animate-in fade-in zoom-in-95 duration-200">
-        
-        {/* मॉडल का हेडर (प्रिंट करने पर छुप जाएगा) */}
-        <div className="flex justify-between items-center border-b pb-3 mb-6 no-print">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 text-black">
+      {/* मॉडल का मुख्य बॉक्स (सिर्फ स्क्रीन प्रीव्यू के लिए) */}
+      <div className="bg-white rounded-2xl p-6 w-full max-w-2xl shadow-2xl relative border border-gray-200 animate-in fade-in zoom-in-95 duration-200">
+
+        {/* मॉडल का हेडर */}
+        <div className="flex justify-between items-center border-b pb-3 mb-6">
           <h3 className="text-lg font-bold text-gray-900">Employee ID Card</h3>
           <div className="flex items-center gap-3">
             {/* प्रिंट बटन */}
@@ -858,111 +1027,63 @@ function IDCardModal({ isOpen, onClose, employee }: IDCardModalProps) {
             <Loader2 className="animate-spin text-amber-600 w-8 h-8" />
           </div>
         ) : (
-          /* ID कार्ड्स का डिस्प्ले सेक्शन */
-          <div className="flex flex-wrap justify-center gap-6 print-section">
-            
-            {/* 1. FRONT SIDE (सामने का भाग) */}
-            <div className="w-[3.375in] h-[2.125in] bg-white border border-gray-300 rounded-xl shadow-md relative flex flex-col justify-between overflow-hidden text-black font-sans select-none shrink-0" style={{ contentVisibility: 'auto' }}>
-              {/* टॉप बार */}
-              <div className="bg-zinc-900 text-white p-2 text-center">
-                <h1 className="text-[11px] font-bold uppercase tracking-wider leading-tight">Sachin Security Services</h1>
-                <p className="text-[7px] text-gray-300 tracking-wide uppercase mt-0.5">Identity Card</p>
-              </div>
-
-              {/* फोटो और मुख्य जानकारी */}
-              <div className="flex p-3 gap-3 items-center flex-1">
-                {/* प्रोफाइल फोटो */}
-                <div className="w-16 h-20 bg-gray-100 border border-zinc-400 rounded overflow-hidden shrink-0 shadow-sm">
-                  {employee.profileUrl ? (
-                    <img src={employee.profileUrl} alt="Emp Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[9px] text-gray-400 bg-gray-50">No Image</div>
-                  )}
-                </div>
-
-                {/* डिटेल्स */}
-                <div className="text-left leading-tight overflow-hidden">
-                  <h2 className="text-[12px] font-bold text-zinc-900 uppercase truncate">{employee.fullName}</h2>
-                  <p className="text-[9px] font-semibold text-amber-600 mb-2 truncate">{employee.designation}</p>
-                  
-                  <p className="text-[8px] text-gray-600"><span className="font-bold text-gray-700">ID NO:</span> {employee.employeeId}</p>
-                  <p className="text-[8px] text-gray-600"><span className="font-bold text-gray-700">Blood Gp:</span> {employee.bloodGroup || 'N/A'}</p>
-                  <p className="text-[8px] text-gray-600"><span className="font-bold text-gray-700">Mobile:</span> {employee.mobileNumber}</p>
-                </div>
-              </div>
-
-              {/* बॉटम डिजाइन लाइन */}
-              <div className="bg-amber-600 h-1.5 w-full"></div>
-            </div>
-
-            {/* 2. BACK SIDE (पीछे का भाग - QR कोड के साथ) */}
-            <div className="w-[3.375in] h-[2.125in] bg-zinc-900 border border-zinc-800 rounded-xl shadow-md relative flex flex-col justify-between p-3 text-white font-sans select-none shrink-0" style={{ contentVisibility: 'auto' }}>
-              
-              <div className="text-center">
-                <h3 className="text-[9px] font-bold text-amber-500 uppercase tracking-wide">Instructions</h3>
-                <p className="text-[6.5px] text-gray-400 mt-0.5 px-1 leading-normal">
-                  This card is non-transferable and remains the property of Sachin Security Services. If found, please return to the company office.
-                </p>
-              </div>
-
-              {/* QR कोड बॉक्स */}
-              <div className="flex justify-between items-center bg-white/5 p-2 rounded-lg mx-1">
-                <div className="text-left max-w-[130px]">
-                  <p className="text-[8px] font-bold text-white uppercase tracking-wider">Scan for Verification</p>
-                  <p className="text-[6.5px] text-gray-400 mt-0.5 leading-tight">Scan this QR code using a smartphone camera to instantly verify live staff credentials.</p>
-                </div>
-                {/* लाइव जेनरेट हुआ QR कोड */}
-                {qrSrc && (
-                  <img src={qrSrc} alt="Verification QR" className="w-[52px] h-[52px] bg-white p-0.5 rounded shadow-sm" />
-                )}
-              </div>
-
-              {/* सिग्नेचर एरिया */}
-              <div className="flex justify-between items-end text-[7.5px] px-1 text-gray-400">
-                <p className="border-t border-gray-600 pt-1 px-1">Authorized Signatory</p>
-                <p className="font-mono text-[7px] text-amber-500">{employee.employeeId}</p>
-              </div>
-            </div>
-
+          /* ID कार्ड्स का स्क्रीन प्रीव्यू */
+          <div className="flex flex-wrap justify-center gap-6">
+            <IdCardFaces employee={employee} qrSrc={qrSrc} profileImg={profileImg} />
           </div>
         )}
       </div>
 
-      {/* प्रिंट के लिए विशेष CSS नियम जो पेज के बाकी हिस्सों को छुपा देते हैं */}
+      {/* प्रिंट-ओनली पोर्टल: यह <body> का डायरेक्ट चाइल्ड बनता है, इसलिए प्रिंट करते समय
+          बाकी पूरा पेज (टेबल, फिल्टर, मॉडल) आसानी से हटाया जा सकता है और सिर्फ कार्ड्स प्रिंट होते हैं */}
+      {mounted && !loading && createPortal(
+        <div id="id-print-portal">
+          <IdCardFaces employee={employee} qrSrc={qrSrc} profileImg={profileImg} />
+        </div>,
+        document.body
+      )}
+
+      {/* प्रिंट CSS: बाकी पेज को display:none करता है (सिर्फ visibility:hidden नहीं, जिससे 30+ खाली पेज बनते थे)।
+          कार्ड्स को उनके असली फिजिकल साइज (स्टैंडर्ड CR80: 3.375in x 2.125in) में एक सामान्य शीट पर प्रिंट करता है,
+          जिन पर कट-गाइड (डैश्ड बॉर्डर) होते हैं - ताकि प्रिंट करके सीधे काटकर इस्तेमाल किया जा सके */}
       <style jsx global>{`
+        /* प्रिंट पोर्टल स्क्रीन पर नहीं दिखता */
+        #id-print-portal {
+          display: none;
+        }
+
         @media print {
-          /* पूरे पेज की बाकी चीजों को छुपाएं */
-          body * {
-            visibility: hidden;
+          /* सामान्य शीट (डिफ़ॉल्ट A4/Letter) पर छोटे मार्जिन के साथ प्रिंट - कार्ड असली साइज में रहते हैं */
+          @page {
+            margin: 12mm;
           }
-          /* केवल प्रिंट सेक्शन और उसके अंदर की चीजों को दिखाएं */
-          .print-section, .print-section * {
-            visibility: visible;
-          }
-          /* कार्ड्स को प्रिंट पेज के सबसे ऊपरी बाएं कोने पर सही ढंग से सेट करें */
-          .print-section {
-            position: fixed;
-            left: 0;
-            top: 0;
-            display: flex !important;
-            flex-direction: row !important;
-            gap: 24px !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            background: white !important;
-          }
-          /* मॉडल के बैकड्रॉप और हेडर्स को प्रिंट से हटाएं */
-          .no-print {
+
+          /* पूरे ऐप को प्रिंट से हटाएं, सिर्फ कार्ड पोर्टल दिखाएं */
+          body > *:not(#id-print-portal) {
             display: none !important;
           }
-          .no-print-backdrop {
-            background: none !important;
-            position: absolute !important;
+
+          #id-print-portal {
+            display: block !important;
           }
-          .modal-container {
+
+          /* हर कार्ड बिल्कुल असली ID कार्ड साइज में, कट-गाइड के साथ */
+          #id-print-portal .id-card {
+            width: 3.375in !important;
+            height: 2.125in !important;
+            margin: 0 0 6mm 0 !important;
+            border: 1px dashed #999 !important;
+            border-radius: 0 !important;
             box-shadow: none !important;
-            border: none !important;
-            padding: 0 !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          /* बैकग्राउंड कलर (डार्क बैक, एम्बर बार, लोगो) प्रिंट में बने रहें */
+          #id-print-portal,
+          #id-print-portal * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
         }
       `}</style>

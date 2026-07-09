@@ -2,6 +2,7 @@ import { MongoClient } from "mongodb";
 import { notFound } from "next/navigation";
 import { ShieldCheck, ShieldAlert, User, Phone, Briefcase, Award } from "lucide-react";
 import { getCollection } from '@/app/lib/db';
+import { decryptId } from '@/app/lib/idcrypto';
 
 
 
@@ -24,7 +25,10 @@ async function getEmployee(employeeId: string) {
           bloodGroup: 1,
           mobileNumber: 1,
           workLocation: 1,
-          joiningDate: 1
+          joiningDate: 1,
+          pfNumber: 1,
+          esiNumber: 1,
+          uanNumber: 1
         }
       }
     );
@@ -41,7 +45,10 @@ export default async function EmployeeVerificationPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const employee = await getEmployee(id);
+
+  // QR links carry an encrypted token, not the raw employeeId, to block enumeration.
+  const employeeId = decryptId(id);
+  const employee = employeeId ? await getEmployee(employeeId) : null;
 
   // यदि कर्मचारी डेटाबेस में नहीं मिलता है तो 404 पेज दिखाएं
   if (!employee) {
@@ -122,6 +129,21 @@ export default async function EmployeeVerificationPage({
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-500">Joining Date</span>
             <span className="font-medium text-gray-800">{employee.joiningDate || "N/A"}</span>
+          </div>
+
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-500">PF Number</span>
+            <span className="font-medium text-gray-800">{employee.pfNumber || "N/A"}</span>
+          </div>
+
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-500">ESI Number</span>
+            <span className="font-medium text-gray-800">{employee.esiNumber || "N/A"}</span>
+          </div>
+
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-500">UAN Number</span>
+            <span className="font-medium text-gray-800">{employee.uanNumber || "N/A"}</span>
           </div>
 
         </div>

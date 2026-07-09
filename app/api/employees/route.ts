@@ -1,6 +1,7 @@
 // app/api/employees/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getCollection } from '@/app/lib/db';
+import { encryptId } from '@/app/lib/idcrypto';
 
 // GET - Fetch all employees
 export async function GET(request: NextRequest) {
@@ -9,13 +10,42 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const searchBy = searchParams.get('searchBy') || 'name';
     const workLocation = searchParams.get('workLocation');
+    const state = searchParams.get('state');
     const gender = searchParams.get('gender');
     const department = searchParams.get('department');
-    
+    const designation = searchParams.get('designation');
+    const meta = searchParams.get('meta');
+
     const collection = await getCollection('employees');
-    
+
+    // Meta mode: return distinct values for the filter dropdowns so the UI does
+    // not need to load every employee just to build the dropdown options.
+    if (meta === 'filters') {
+      const [workLocations, states, departments, designations] = await Promise.all([
+        collection.distinct('workLocation'),
+        collection.distinct('state'),
+        collection.distinct('department'),
+        collection.distinct('designation'),
+      ]);
+      const clean = (arr: any[]) => arr.filter(Boolean).sort();
+      return NextResponse.json({
+        success: true,
+        filters: {
+          workLocations: clean(workLocations),
+          states: clean(states),
+          departments: clean(departments),
+          designations: clean(designations),
+        },
+      });
+    }
+
+    // Pagination params
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+    const limit = Math.min(200, Math.max(1, parseInt(searchParams.get('limit') || '50', 10) || 50));
+    const skip = (page - 1) * limit;
+
     let query: any = {};
-    
+
     // Search filter
     if (search) {
       if (searchBy === 'name') {
@@ -24,21 +54,39 @@ export async function GET(request: NextRequest) {
         query.aadharNumber = { $regex: search, $options: 'i' };
       }
     }
-    
+
     // Additional filters
     if (workLocation) query.workLocation = workLocation;
+    if (state) query.state = state;
     if (gender) query.gender = gender;
     if (department) query.department = department;
-    
+    if (designation) query.designation = designation;
+
+    // Total count for pagination (respects the same filters)
+    const total = await collection.countDocuments(query);
+
     const employees = await collection
       .find(query)
       .sort({ joiningDate: -1 })
+      .skip(skip)
+      .limit(limit)
       .toArray();
-    
+
+    // Attach an obfuscated token used for the QR verification link so the
+    // raw (guessable) employeeId is never exposed in the public URL.
+    const data = employees.map((emp: any) => ({
+      ...emp,
+      idToken: emp.employeeId ? encryptId(emp.employeeId) : null,
+    }));
+
     return NextResponse.json({
       success: true,
-      data: employees,
-      count: employees.length
+      data,
+      count: data.length,
+      total,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
     });
   } catch (error: any) {
     return NextResponse.json(
