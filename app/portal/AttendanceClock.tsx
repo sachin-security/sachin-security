@@ -44,7 +44,7 @@ export default function AttendanceClock() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [noEmployee, setNoEmployee] = useState(false);
-  const [identity, setIdentity] = useState<{ faceRequired: boolean; aadhaarRequired: boolean; configured: boolean; faceConfigured: boolean; aadhaarVerified: boolean; faceNotice: FacePrivacyNotice | null } | null>(null);
+  const [identity, setIdentity] = useState<{ faceRequired: boolean; faceTestEnabled?: boolean; aadhaarRequired: boolean; configured: boolean; faceConfigured: boolean; aadhaarVerified: boolean; faceNotice: FacePrivacyNotice | null } | null>(null);
   const [faceId, setFaceId] = useState("");
 
   const loadToday = async () => {
@@ -189,7 +189,7 @@ export default function AttendanceClock() {
 
       {identity && (!clockedIn || !clockedOut) && <>
         {identity.aadhaarVerified ? <p className="mt-2 text-sm text-green-700">Aadhaar identity verified</p> : identity.configured && <IdentityVerification kind="aadhaar" onVerified={() => setIdentity(current => current ? { ...current, aadhaarVerified: true } : current)} />}
-        {identity.faceRequired && (identity.faceConfigured ? <><IdentityVerification kind="face" faceNotice={identity.faceNotice} verifiedId={faceId} onVerified={setFaceId} />{faceId && <p className="mt-2 text-sm text-green-700">Face verified. Press Clock In/Out to record your attendance.</p>}</> : <p className="mt-2 text-sm text-amber-800">Face attendance requires administrator setup.</p>)}
+        {(identity.faceRequired || identity.faceTestEnabled) && (identity.faceConfigured ? <><IdentityVerification kind="face" faceNotice={identity.faceNotice} verifiedId={faceId} onVerified={setFaceId} />{faceId && <p className="mt-2 text-sm text-green-700">Face verified. Attendance is recorded only when you press Clock In/Out.</p>}</> : <p className="mt-2 text-sm text-amber-800">Face attendance requires administrator setup.</p>)}
         {identity.aadhaarRequired && !identity.configured && !identity.aadhaarVerified && <p className="mt-2 text-sm text-amber-800">Aadhaar verification requires administrator setup.</p>}
       </>}
       <a className="mt-3 block text-sm text-amber-800 underline" href="/portal/privacy">Face privacy &amp; consent</a>
