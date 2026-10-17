@@ -24,6 +24,7 @@ export async function GET() {
   ).sort({ grantedAt: -1 }).limit(20).toArray() : [];
   return NextResponse.json({
     faceRequired: process.env.FACE_ATTENDANCE_REQUIRED === "true",
+    faceTestEnabled: !!perm.user.employeeId && (process.env.FACE_TEST_EMPLOYEE_IDS || "").split(",").map(id => id.trim()).includes(perm.user.employeeId),
     aadhaarRequired: process.env.AADHAAR_ATTENDANCE_REQUIRED === "true",
     configured: !!(process.env.IDENTITY_PROVIDER_URL && process.env.IDENTITY_PROVIDER_API_KEY && process.env.IDENTITY_HOSTED_ORIGINS),
     faceConfigured: awsFaceConfigured() || (process.env.FACE_VERIFICATION_PROVIDER !== "aws" && !!(process.env.IDENTITY_PROVIDER_URL && process.env.IDENTITY_PROVIDER_API_KEY && process.env.IDENTITY_HOSTED_ORIGINS)),
