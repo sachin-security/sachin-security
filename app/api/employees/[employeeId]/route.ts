@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCollection } from '@/app/lib/db';
 import { requirePermission } from '@/app/lib/apiAuth';
+import { EMPLOYEE_FORM_FIELDS } from '@/app/lib/employeeFields';
 
 // GET - Fetch single employee
 export async function GET(
@@ -49,7 +50,9 @@ export async function PUT(
     const collection = await getCollection('employees');
 
     // employeeId is the key and is not editable; drop it and internal fields.
-    const { employeeId: _ignore, _id, createdAt, ...rest } = body;
+    const allowed = new Set([...EMPLOYEE_FORM_FIELDS.map(f => f.key), 'isUploadedtoR2', 'status']);
+    const rest = Object.fromEntries(Object.entries(body).filter(([key]) => allowed.has(key)));
+    const existing = await collection.findOne({ employeeId: params.employeeId });
     const updateData = {
       ...rest,
       updatedAt: new Date()
@@ -57,7 +60,7 @@ export async function PUT(
     
     const result = await collection.updateOne(
       { employeeId: params.employeeId },
-      { $set: updateData }
+      { $set: updateData, ...(Object.hasOwn(rest, 'aadharNumber') && rest.aadharNumber !== existing?.aadharNumber ? { $unset: { aadhaarVerification: '' } } : {}) }
     );
     
     if (result.matchedCount === 0) {

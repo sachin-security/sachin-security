@@ -19,6 +19,7 @@ function Req({ field }: { field: string }) {
 export default function AddEmployeePage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photoPending, setPhotoPending] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [accountWarning, setAccountWarning] = useState<string | null>(null);
@@ -152,6 +153,7 @@ export default function AddEmployeePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (photoPending) { setError('Upload or cancel the selected photo before saving.'); return; }
     setSuccess(false);
 
     // Validate form
@@ -253,7 +255,7 @@ export default function AddEmployeePage() {
         {/* Personal Information */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Personal Information</h2>
-           <ProfilePhotoUpload onUploadSuccess={(photoUrl:string ,filename:string ,isUploadedtoR2:string)=>setFormData({ ...formData, profileUrl: photoUrl, profileFilename:filename ,isUploadedtoR2 })}/>
+           <ProfilePhotoUpload onPendingChange={setPhotoPending} onUploadSuccess={(photoUrl:string ,filename:string ,isUploadedtoR2:string)=>setFormData(current => ({ ...current, profileUrl: photoUrl, profileFilename:filename ,isUploadedtoR2 }))}/>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

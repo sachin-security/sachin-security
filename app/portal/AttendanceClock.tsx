@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { Loader2, MapPin, LogIn, LogOut, CheckCircle2 } from "lucide-react";
 import { formatWorked } from "@/app/lib/attendance";
+import IdentityVerification from "@/app/components/IdentityVerification";
+import type { FacePrivacyNotice } from "@/app/lib/facePrivacy";
 
 interface Punch {
   at: string;
@@ -42,6 +44,8 @@ export default function AttendanceClock() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [noEmployee, setNoEmployee] = useState(false);
+  const [identity, setIdentity] = useState<{ faceRequired: boolean; aadhaarRequired: boolean; configured: boolean; aadhaarVerified: boolean; faceNotice: FacePrivacyNotice | null } | null>(null);
+  const [faceId, setFaceId] = useState("");
 
   const loadToday = async () => {
     try {
@@ -51,6 +55,8 @@ export default function AttendanceClock() {
         setRecord(data.data);
         setNoEmployee(!!data.noEmployee);
       }
+    } catch {
+      setError("Could not load attendance. Refresh to retry.");
     } finally {
       setLoading(false);
     }
@@ -58,6 +64,10 @@ export default function AttendanceClock() {
 
   useEffect(() => {
     loadToday();
+    fetch("/api/identity").then(async res => {
+      if (!res.ok) throw new Error("Could not load verification settings. Refresh to retry.");
+      setIdentity(await res.json());
+    }).catch(e => setError(e.message));
   }, []);
 
   const punch = async (type: "in" | "out") => {
@@ -82,6 +92,7 @@ export default function AttendanceClock() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type,
+          faceVerificationId: faceId,
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
           accuracy: pos.coords.accuracy,
@@ -93,7 +104,10 @@ export default function AttendanceClock() {
       } else {
         setError(data.error || "Failed to record attendance");
       }
+    } catch {
+      setError("Could not record attendance. Check your connection and try again.");
     } finally {
+      setFaceId("");
       setBusy(false);
     }
   };
@@ -157,7 +171,7 @@ export default function AttendanceClock() {
       ) : (
         <button
           onClick={() => punch(clockedIn ? "out" : "in")}
-          disabled={busy}
+          disabled={busy || !identity || (identity.faceRequired && !faceId) || (identity.aadhaarRequired && !identity.aadhaarVerified)}
           className={`w-full py-2.5 rounded-lg font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-60 ${
             clockedIn ? "bg-gray-900 hover:bg-gray-800" : "bg-amber-600 hover:bg-amber-700"
           }`}
@@ -172,6 +186,13 @@ export default function AttendanceClock() {
           {busy ? "Capturing location…" : clockedIn ? "Clock Out" : "Clock In"}
         </button>
       )}
+
+      {identity && (!clockedIn || !clockedOut) && <>
+        {identity.aadhaarVerified ? <p className="mt-2 text-sm text-green-700">Aadhaar identity verified</p> : identity.configured && <IdentityVerification kind="aadhaar" onVerified={() => setIdentity(current => current ? { ...current, aadhaarVerified: true } : current)} />}
+        {identity.faceRequired && (identity.configured ? <><IdentityVerification kind="face" faceNotice={identity.faceNotice} verifiedId={faceId} onVerified={setFaceId} />{faceId && <p className="mt-2 text-sm text-green-700">Face verified. Press Clock In/Out to record your attendance.</p>}</> : <p className="mt-2 text-sm text-amber-800">Face attendance requires administrator setup.</p>)}
+        {identity.aadhaarRequired && !identity.configured && !identity.aadhaarVerified && <p className="mt-2 text-sm text-amber-800">Aadhaar verification requires administrator setup.</p>}
+      </>}
+      <a className="mt-3 block text-sm text-amber-800 underline" href="/portal/privacy">Face privacy &amp; consent</a>
 
       <p className="flex items-center gap-1 text-[11px] text-gray-400 mt-2">
         <MapPin className="w-3 h-3" /> Location is captured and required for each punch.

@@ -1,18 +1,20 @@
 // components/ProfilePhotoUpload.tsx
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Upload, Camera, Loader2, X, Check } from 'lucide-react';
 import Image from 'next/image';
 
 interface ProfilePhotoUploadProps {
   onUploadSuccess?: (photoUrl: string , filename:string ,isUploadedtoR2:string) => void;
   existingPhotoUrl?: string;
+  onPendingChange?: (pending: boolean) => void;
 }
 
 export default function ProfilePhotoUpload({ 
   onUploadSuccess,
-  existingPhotoUrl 
+  existingPhotoUrl,
+  onPendingChange
 }: ProfilePhotoUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [localPreview, setLocalPreview] = useState<string>(''); // Local preview from file
@@ -21,6 +23,7 @@ export default function ProfilePhotoUpload({
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => () => { if (localPreview) URL.revokeObjectURL(localPreview); }, [localPreview]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -42,6 +45,7 @@ export default function ProfilePhotoUpload({
 
     setError('');
     setSelectedFile(file);
+    onPendingChange?.(true);
     setUploadSuccess(false);
     // Create blob URL for immediate preview (much faster than FileReader)
     const blobUrl = URL.createObjectURL(file);
@@ -73,6 +77,7 @@ export default function ProfilePhotoUpload({
       if (data.success) {
         setUploadSuccess(true);
         setUploadedUrl(data.data.url);
+        onPendingChange?.(false);
         
         // Call parent callback if provided
         if (onUploadSuccess) {
@@ -93,7 +98,7 @@ export default function ProfilePhotoUpload({
   const handleRemove = () => {
     setSelectedFile(null);
     setLocalPreview('');
-    setUploadedUrl('');
+    onPendingChange?.(false);
     setUploadSuccess(false);
     setError('');
     if (fileInputRef.current) {
@@ -119,6 +124,7 @@ export default function ProfilePhotoUpload({
         <div className="space-y-2">
           <button
             onClick={handleBrowseClick}
+            disabled={isUploading}
             type="button"
             className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
           >
@@ -146,7 +152,7 @@ export default function ProfilePhotoUpload({
               )}
             </button>
           )}
-           {!uploadSuccess && (
+           {selectedFile && !uploadSuccess && (
               <p className="text-xs text-center text-amber-600 mt-1">
                 ⚠️ Click "Upload Photo" to save this photo
               </p>
@@ -176,6 +182,8 @@ export default function ProfilePhotoUpload({
                 )}
                 <button
                   onClick={handleRemove}
+                  disabled={isUploading}
+                  aria-label="Cancel selected photo"
                   className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                   type="button"
                 >
@@ -210,6 +218,7 @@ export default function ProfilePhotoUpload({
         <input
           ref={fileInputRef}
           type="file"
+          disabled={isUploading}
           accept="image/jpeg,image/jpg,image/png"
           onChange={handleFileSelect}
           className="hidden"

@@ -3,6 +3,8 @@
 import { NextResponse } from "next/server";
 import { getCollection } from "@/app/lib/db";
 import { requirePermission } from "@/app/lib/apiAuth";
+import { photoVersion } from "@/app/lib/identityPolicy";
+import { getFacePrivacyNotice } from "@/app/lib/facePrivacy";
 import { istDateString, computeStatus, isValidGeo, evaluateGeofence, MAX_OPEN_SHIFT_HOURS } from "@/app/lib/attendance";
 
 export async function POST(request: Request) {
@@ -36,8 +38,12 @@ export async function POST(request: Request) {
   const employees = await getCollection("employees");
   const employee = await employees.findOne(
     { employeeId },
-    { projection: { workLocation: 1 } }
+    { projection: { workLocation: 1, profileUrl: 1, aadhaarVerification: 1 } }
   );
+  if (!employee) return NextResponse.json({ success: false, error: "Employee not found" }, { status: 404 });
+  if (process.env.AADHAAR_ATTENDANCE_REQUIRED === "true" && !employee.aadhaarVerification?.verifiedAt) {
+    return NextResponse.json({ success: false, error: "Complete Aadhaar verification first." }, { status: 403 });
+  }
   const workLocation = typeof employee?.workLocation === "string" ? employee.workLocation.trim() : "";
 
   type Site = { lat?: unknown; lng?: unknown; geofenceRadiusM?: unknown; geofenceEnabled?: unknown; name?: string };
@@ -55,6 +61,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: fence.reason || "You are not at your assigned site." }, { status: 403 });
   }
 
+  let faceVerificationId: string | null = null;
+  if (process.env.FACE_ATTENDANCE_REQUIRED === "true") {
+    const notice = getFacePrivacyNotice();
+    if (!notice) return NextResponse.json({ success: false, error: "Face attendance privacy setup is incomplete. Contact HR." }, { status: 503 });
+    if (typeof body.faceVerificationId !== "string" || typeof employee.profileUrl !== "string") {
+      return NextResponse.json({ success: false, error: "Complete face verification before punching." }, { status: 403 });
+    }
+    const sessions = await getCollection("identitySessions");
+    const proof = await sessions.findOneAndUpdate({
+      id: body.faceVerificationId, employeeId, userId: perm.user.id, kind: "face", status: "verified",
+      photoVersion: photoVersion(employee.profileUrl), expiresAt: { $gt: new Date() },
+      consumedAt: { $exists: false },
+      revokedAt: { $exists: false }, consentVersion: notice.version,
+    }, { $set: { consumedAt: new Date() } }, { returnDocument: "before" });
+    if (!proof) return NextResponse.json({ success: false, error: "Face verification expired or was used. Verify again." }, { status: 403 });
+    faceVerificationId = proof.id;
+  }
+
   const date = istDateString();
   const now = new Date();
   const punch = {
@@ -64,6 +88,7 @@ export async function POST(request: Request) {
     accuracy: typeof accuracy === "number" ? accuracy : null,
     distanceM: fence.distanceM,
     siteName: site?.name || workLocation || null,
+    ...(faceVerificationId ? { faceVerificationId } : {}),
   };
 
   const collection = await getCollection("attendance");

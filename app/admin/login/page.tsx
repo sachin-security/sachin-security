@@ -23,7 +23,9 @@ export default function LoginPage() {
       });
 
       if (res?.error) {
-        setError("Invalid email/employee ID or password");
+        setError(res.error === "CredentialsSignin"
+          ? "Invalid email/employee ID or password"
+          : "Sign-in is unavailable. Ask your administrator to check the database and account setup.");
         setIsLoading(false);
       } else {
         // Middleware routes staff to /admin and employees to /portal (and forces

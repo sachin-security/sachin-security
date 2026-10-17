@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, CheckCircle } from "lucide-react";
 import { getMissingRequired, isFieldRequired } from "@/app/lib/employeeFields";
+import ProfilePhotoUpload from "@/app/components/uploadPP";
 
 type FieldType = "text" | "date" | "number" | "textarea" | "select" | "ref";
 interface Field { key: string; label: string; type?: FieldType; options?: string[]; ref?: "departments" | "designations" | "locations"; }
@@ -71,6 +72,7 @@ export default function EditEmployeePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [photoPending, setPhotoPending] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -100,6 +102,7 @@ export default function EditEmployeePage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (photoPending) { setError("Upload or cancel the selected photo before saving."); return; }
     // Required fields (driven by the central field registry).
     const missing = getMissingRequired(form);
     if (missing.length > 0) {
@@ -146,6 +149,9 @@ export default function EditEmployeePage() {
         </div>
       ) : (
         <form onSubmit={submit} className="space-y-6">
+          <ProfilePhotoUpload existingPhotoUrl={form.profileUrl} onPendingChange={setPhotoPending} onUploadSuccess={(profileUrl, profileFilename, isUploadedtoR2) => setForm(current => ({ ...current, profileUrl, profileFilename, isUploadedtoR2 }))} />
+          <p className="text-sm text-gray-600">Upload the replacement photo, then save the employee to update enrollment. Face checks use the saved photo.</p>
+          <p className="text-sm text-gray-600">Aadhaar verification: {form.aadhaarVerification?.verifiedAt ? "Verified" : "Not verified — employee can verify in their portal"}</p>
           {SECTIONS.map((section) => (
             <div key={section.title} className="bg-white border border-gray-200 rounded-lg p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4">{section.title}</h2>

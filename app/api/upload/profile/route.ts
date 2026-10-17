@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { r2 } from "@/app/lib/r2";
+import { requirePermission } from "@/app/lib/apiAuth";
 
 export async function POST(request: NextRequest) {
+  const perm = await requirePermission("employees:write");
+  if (!perm.ok) return NextResponse.json({ success: false, error: perm.error }, { status: perm.status });
   try {
     console.log("Got request to upload PROFILE");
 

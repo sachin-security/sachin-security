@@ -11,7 +11,7 @@
 import { MongoClient } from "mongodb";
 import bcrypt from "bcryptjs";
 
-const DB_NAME = process.env.DB_NAME || "sachin-security-01";
+const DB_NAME = process.env.DB_NAME || "sachin-security-staging-01";
 const uri = process.env.MONGODB_URI;
 
 if (!uri) {
