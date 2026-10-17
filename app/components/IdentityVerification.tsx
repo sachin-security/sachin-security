@@ -1,12 +1,15 @@
 "use client";
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import type { FacePrivacyNotice } from "@/app/lib/facePrivacy";
+const AwsFaceCapture = dynamic(() => import("./AwsFaceCapture"), { ssr: false, loading: () => <p>Loading secure camera check…</p> });
 
 export default function IdentityVerification({ kind, onVerified, faceNotice, verifiedId }: {
   kind: "face" | "aadhaar"; onVerified: (id: string) => void;
   faceNotice?: FacePrivacyNotice | null; verifiedId?: string;
 }) {
-  const [session, setSession] = useState<{ id: string; url: string } | null>(null);
+  const [session, setSession] = useState<{ id: string; url?: string; captureMode?: "aws"; awsSessionId?: string; region?: string } | null>(null);
+  const [captureFinished, setCaptureFinished] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [consent, setConsent] = useState(false);
@@ -22,15 +25,16 @@ export default function IdentityVerification({ kind, onVerified, faceNotice, ver
         }) });
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || "Verification failed");
-      if (action === "start") { setSession({ id: data.id, url: data.url }); setReceiptId(data.id); }
+      if (action === "start") { setSession({ id: data.id, url: data.url, captureMode: data.captureMode, awsSessionId: data.awsSessionId, region: data.region }); setReceiptId(data.id); setCaptureFinished(false); }
       else if (data.verified) { onVerified(data.id); setSession(null); }
     } catch (e) { setError(e instanceof Error ? e.message : "Verification failed"); }
     finally { setBusy(false); }
   }
   async function withdraw() {
-    setBusy(true); setConsent(false); onVerified("");
+    const id = receiptId || verifiedId;
+    setBusy(true); setConsent(false); setSession(null); onVerified("");
     try {
-      const res = await fetch("/api/identity", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "face", action: "withdraw", id: receiptId || verifiedId }) });
+      const res = await fetch("/api/identity", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "face", action: "withdraw", id }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Withdrawal could not be completed. Contact HR.");
       setSession(null); setReceiptId(""); setDeclined(true); setError("");
@@ -54,9 +58,16 @@ export default function IdentityVerification({ kind, onVerified, faceNotice, ver
       <span>{kind === "face" ? "I agree to a live face check against my enrollment photo for this attendance punch." : "I agree to verify my identity through Aadhaar OTP with the authentication provider."}</span>
     </label>
     {session ? <div className="space-y-2">
-      {consent && <a className="block text-amber-800 underline" href={session.url} target="_blank" rel="noopener noreferrer">Open secure verification (new tab)</a>}
-      <p>Complete verification in that tab, then return here. Sessions expire after five minutes.</p>
-      <button type="button" disabled={busy || !consent} onClick={() => run("check")} className="rounded border px-3 py-2 disabled:opacity-50">{busy ? "Checking…" : "Check verification"}</button>
+      {session.captureMode === "aws" ? <>
+        <p>Allow camera access when asked. Follow the live face instructions; a photograph alone cannot complete this check. This session expires in three minutes.</p>
+        {consent && !captureFinished && session.awsSessionId && session.region && <AwsFaceCapture id={session.id} sessionId={session.awsSessionId} region={session.region}
+          onComplete={() => { setCaptureFinished(true); void run("check"); }} onCancel={() => { void withdraw(); }}
+          onError={message => { setCaptureFinished(true); setError(message); }} />}
+      </> : <>
+        {consent && <a className="block text-amber-800 underline" href={session.url} target="_blank" rel="noopener noreferrer">Open secure verification (new tab)</a>}
+        <p>Complete verification in that tab, then return here. Sessions expire after five minutes.</p>
+      </>}
+      <button type="button" disabled={busy || !consent || (session.captureMode === "aws" && !captureFinished)} onClick={() => run("check")} className="rounded border px-3 py-2 disabled:opacity-50">{busy ? "Checking…" : "Check verification"}</button>
       <button type="button" disabled={busy} onClick={() => setSession(null)} className="ml-2 underline">Start again</button>
     </div> : <button type="button" disabled={busy || !consent} onClick={() => run("start")} className="rounded border px-3 py-2 disabled:opacity-50">{busy ? "Starting…" : `Start ${label.toLowerCase()}`}</button>}
     </>}

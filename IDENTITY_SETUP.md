@@ -2,6 +2,8 @@
 
 Source: https://github.com/sachin-security/sachin-security (main).
 
+For the direct AWS live-camera and enrollment-photo comparison integration, see [AWS_FACE_SETUP.md](AWS_FACE_SETUP.md). The hosted adapter contract below remains available for other face providers and Aadhaar.
+
 ## What is implemented
 
 - HR can open **Edit Employee**, select and upload a replacement photo, then save the employee. Unsaved photo selections block saving. Canceling a selection preserves the saved photo.
@@ -24,7 +26,7 @@ The provider receives a consent version and purpose on start, plus `prohibitTrai
 
 These controls support a consent-led implementation; they do **not** certify legal compliance. The DPDP Act also contains employment-related legitimate-use provisions; the employer must decide its legal basis and review voluntariness and alternatives. As of 17 October 2026 the rules have a phased commencement schedule, so do not describe every obligation as already effective. Sources: [MeitY final Rules, 13 November 2025](https://www.meity.gov.in/static/uploads/2025/11/53450e6e5dc0bfa85ebd78686cadad39.pdf), [India Code Act entry](https://www.indiacode.nic.in/indiacode/handle/123456789/22037?view_type=browse).
 
-There is **no face recognition engine or Aadhaar OTP service bundled with this code**. A real provider and a private adapter implementing the contract below are required. No demo result is treated as authentication. Enforcement defaults off to preserve the existing attendance flow during setup. Once enabled, verification failures or missing configuration block attendance.
+There is **no offline face recognition engine or Aadhaar OTP service bundled with this code**. A real provider is required: AWS face checks use the direct SDK integration; other providers and Aadhaar use a private adapter implementing the contract below. No demo result is treated as authentication. Enforcement defaults off during setup. Once enabled, verification failures or missing configuration block attendance.
 
 1. Configure the app's existing MongoDB, authentication and R2 photo storage settings.
 2. Choose providers that support hosted live face verification and Aadhaar OTP identity verification. Obtain their accounts and credentials through their onboarding process.

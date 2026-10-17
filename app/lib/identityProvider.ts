@@ -1,5 +1,9 @@
 // Server-only adapter contract. No biometric or Aadhaar secrets reach the browser.
 export async function identityProvider(path: string, payload: Record<string, unknown>) {
+  if (payload.kind === "face" && (payload.provider === "aws" || (!payload.provider && process.env.FACE_VERIFICATION_PROVIDER === "aws"))) {
+    const { awsFaceProvider } = await import("@/app/lib/awsFace");
+    return awsFaceProvider(path, payload);
+  }
   const endpoint = process.env.IDENTITY_PROVIDER_URL;
   const token = process.env.IDENTITY_PROVIDER_API_KEY;
   if (!endpoint || !token) throw new Error("Identity verification is not configured. Contact your administrator.");

@@ -5,6 +5,7 @@ import { getCollection } from "@/app/lib/db";
 import { identityProvider } from "@/app/lib/identityProvider";
 import { photoVersion, verificationUrl, verifiedResult } from "@/app/lib/identityPolicy";
 import { acceptsFaceNotice, getFacePrivacyNotice } from "@/app/lib/facePrivacy";
+import { awsFaceConfigured } from "@/app/lib/awsFacePolicy";
 
 function aadhaarVersion(value: string) {
   const key = process.env.IDENTITY_PROVIDER_API_KEY;
@@ -25,6 +26,7 @@ export async function GET() {
     faceRequired: process.env.FACE_ATTENDANCE_REQUIRED === "true",
     aadhaarRequired: process.env.AADHAAR_ATTENDANCE_REQUIRED === "true",
     configured: !!(process.env.IDENTITY_PROVIDER_URL && process.env.IDENTITY_PROVIDER_API_KEY && process.env.IDENTITY_HOSTED_ORIGINS),
+    faceConfigured: awsFaceConfigured() || (process.env.FACE_VERIFICATION_PROVIDER !== "aws" && !!(process.env.IDENTITY_PROVIDER_URL && process.env.IDENTITY_PROVIDER_API_KEY && process.env.IDENTITY_HOSTED_ORIGINS)),
     aadhaarVerified: !!employee?.aadhaarVerification?.verifiedAt,
     faceNotice: getFacePrivacyNotice(),
     faceConsentReceipts: receipts,
@@ -41,7 +43,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid origin" }, { status: 403 });
   }
   const body = await request.json().catch(() => null);
-  if (!body || !["face", "aadhaar"].includes(body.kind) || !["start", "check", "withdraw"].includes(body.action)) {
+  if (!body || !["face", "aadhaar"].includes(body.kind) || !["start", "check", "withdraw", "credentials", "status"].includes(body.action)) {
     return NextResponse.json({ error: "Invalid verification request" }, { status: 400 });
   }
   const { kind, action } = body;
@@ -69,7 +71,7 @@ export async function POST(request: Request) {
       // Revoke first; a processor outage must not leave the proof usable.
       await sessions.updateOne({ id: body.id, employeeId, userId: perm.user.id }, { $set: { revokedAt: new Date() } });
       await receipts.updateOne({ _id: receipt._id }, { $set: { withdrawnAt: new Date() } });
-      const result = await identityProvider("sessions/withdraw", { sessionId: body.id, providerSessionId: receipt.providerSessionId, subject: employeeId, kind: "face", eraseFaceData: true });
+      const result = await identityProvider("sessions/withdraw", { sessionId: body.id, providerSessionId: receipt.providerSessionId, subject: employeeId, kind: "face", provider: receipt.provider || "hosted", eraseFaceData: true });
       if (result.processingStopped !== true) throw new Error("Processor withdrawal pending");
       await (await getCollection("faceConsentReceipts")).updateOne({ _id: receipt._id }, { $set: { processorStoppedAt: new Date(), deletionConfirmed: result.deletionCompleted === true } });
       return NextResponse.json({ withdrawn: true });
@@ -88,33 +90,45 @@ export async function POST(request: Request) {
       );
       if ((limit?.count ?? 99) > 5) return NextResponse.json({ error: "Too many attempts. Wait a minute." }, { status: 429 });
       const id = randomUUID();
+      const provider = kind === "face" && process.env.FACE_VERIFICATION_PROVIDER === "aws" ? "aws" : "hosted";
       if (kind === "face" && notice) {
         const receipts = await getCollection("faceConsentReceipts");
         await receipts.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
         await receipts.insertOne({ id, employeeId, userId: perm.user.id, noticeVersion: notice.version, notice,
-          grantedAt: new Date(), purpose: "attendance_punch", expiresAt: new Date(now + notice.consentRetentionDays * 86400000) });
+          grantedAt: new Date(), purpose: "attendance_punch", provider, expiresAt: new Date(now + notice.consentRetentionDays * 86400000) });
       }
       const result = await identityProvider("sessions/start", {
-        sessionId: id, subject: employeeId, kind,
+        sessionId: id, subject: employeeId, kind, provider,
         ...(kind === "face" ? { consent: { noticeVersion: notice!.version, grantedAt: new Date().toISOString(), purpose: "attendance_punch" }, prohibitTraining: true, prohibitSecondaryUse: true } : {}),
-        ...(kind === "face" ? { referencePhotoUrl: employee.profileUrl, requireLiveness: true } : { authenticationMethod: "aadhaar_otp", requireConsent: true, expectedAadhaarNumber: employee.aadharNumber }),
+        ...(kind === "face" ? { referencePhotoUrl: employee.profileUrl, referencePhotoKey: employee.profileFilename, requireLiveness: true } : { authenticationMethod: "aadhaar_otp", requireConsent: true, expectedAadhaarNumber: employee.aadharNumber }),
       });
-      const url = verificationUrl(result.url);
+      const url = provider === "aws" ? null : verificationUrl(result.url);
       if (typeof result.providerSessionId !== "string" || !result.providerSessionId) throw new Error("Invalid provider session");
       if (kind === "face") await (await getCollection("faceConsentReceipts")).updateOne({ id }, { $set: { providerSessionId: result.providerSessionId } });
       await sessions.insertOne({ id, employeeId, userId: perm.user.id, kind,
-        providerSessionId: result.providerSessionId,
+        providerSessionId: result.providerSessionId, provider,
+        ...(provider === "aws" ? { referencePhotoKey: employee.profileFilename } : {}),
         photoVersion: kind === "face" ? photoVersion(employee.profileUrl) : null,
         aadhaarVersion: kind === "aadhaar" ? aadhaarVersion(employee.aadharNumber) : null,
         ...(kind === "face" ? { consentVersion: notice!.version } : {}),
-        status: "pending", createdAt: new Date(), expiresAt: new Date(now + 5 * 60000) });
-      return NextResponse.json({ id, url });
+        status: "pending", createdAt: new Date(), expiresAt: new Date(now + (provider === "aws" ? 3 : 5) * 60000) });
+      return NextResponse.json({ id, url, ...(provider === "aws" ? { captureMode: "aws", awsSessionId: result.providerSessionId, region: result.region } : {}) });
     }
     if (typeof body.id !== "string") return NextResponse.json({ error: "Invalid session" }, { status: 400 });
     const session = await sessions.findOne({ id: body.id, employeeId, userId: perm.user.id, kind, expiresAt: { $gt: new Date() } });
     if (!session || session.consumedAt || session.revokedAt) return NextResponse.json({ error: "Verification expired, withdrawn or used. Start again." }, { status: 400 });
     if (kind === "face" && (!notice || session.consentVersion !== notice.version)) return NextResponse.json({ error: "The face-data notice changed. Read it and consent again." }, { status: 403 });
-    const result = await identityProvider("sessions/check", { providerSessionId: session.providerSessionId, sessionId: session.id, subject: employeeId, kind });
+    if (action === "status") return NextResponse.json({ active: true }, { headers: { "Cache-Control": "no-store" } });
+    if (action === "credentials") {
+      if (kind !== "face" || session.provider !== "aws" || session.status !== "pending") return NextResponse.json({ error: "Invalid camera session" }, { status: 403 });
+      const claimed = await sessions.findOneAndUpdate({ _id: session._id, revokedAt: { $exists: false }, credentialsIssuedAt: { $exists: false }, expiresAt: { $gt: new Date() } }, { $set: { credentialsIssuedAt: new Date() } }, { returnDocument: "before" });
+      if (!claimed) return NextResponse.json({ error: "Camera credentials already issued or session revoked. Start again." }, { status: 403 });
+      const { awsBrowserCredentials } = await import("@/app/lib/awsFace");
+      const credentials = await awsBrowserCredentials(session.id);
+      return NextResponse.json({ credentials }, { headers: { "Cache-Control": "no-store" } });
+    }
+    if (session.provider === "aws" && session.referencePhotoKey !== employee.profileFilename) return NextResponse.json({ error: "Enrollment photo changed. Verify again." }, { status: 409 });
+    const result = await identityProvider("sessions/check", { providerSessionId: session.providerSessionId, sessionId: session.id, subject: employeeId, kind, provider: session.provider || "hosted", referencePhotoKey: employee.profileFilename });
     if (!verifiedResult(kind, result, employeeId, session.id)) {
       return NextResponse.json({ verified: false, error: "Verification is incomplete or was unsuccessful. Complete it in the verification tab, then check again." });
     }

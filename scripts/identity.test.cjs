@@ -19,7 +19,7 @@ function load(file, mocks = {}) {
   mod.filename = filename;
   mod.paths = module.paths;
   const original = mod.require.bind(mod);
-  mod.require = name => Object.hasOwn(mocks, name) ? mocks[name] : name === '@/app/lib/facePrivacy' ? load('app/lib/facePrivacy.ts') : original(name);
+  mod.require = name => Object.hasOwn(mocks, name) ? mocks[name] : name === '@/app/lib/facePrivacy' ? load('app/lib/facePrivacy.ts') : name === '@/app/lib/awsFacePolicy' ? load('app/lib/awsFacePolicy.ts') : original(name);
   mod._compile(compiled, filename);
   return mod.exports;
 }
@@ -211,4 +211,81 @@ test('employee edits cannot forge verification and changing Aadhaar clears statu
   assert.equal(update.$set['aadhaarVerification.verifiedAt'], undefined);
   assert.deepEqual(update.$unset, { aadhaarVerification: '' });
   assert.equal(update.$set.profileUrl, 'https://photos.example.com/new.jpg');
+});
+
+function awsFixture(overrides = {}) {
+  const calls = [];
+  const sessionId = '11111111-1111-4111-8111-111111111111';
+  class Rekognition {
+    async send(command) {
+      const name = command.constructor.name;
+      calls.push({ name, input: command.input });
+      if (Object.hasOwn(overrides, name)) return overrides[name];
+      if (name === 'CreateFaceLivenessSessionCommand') return { SessionId: sessionId };
+      if (name === 'GetFaceLivenessSessionResultsCommand') return { SessionId: sessionId, Status: 'SUCCEEDED', Confidence: 99, ReferenceImage: { Bytes: new Uint8Array([1]) } };
+      if (name === 'DetectFacesCommand') return { FaceDetails: [{}] };
+      if (name === 'CompareFacesCommand') return { FaceMatches: [{ Similarity: 99.8 }], UnmatchedFaces: [] };
+    }
+  }
+  const sdk = require('@aws-sdk/client-rekognition');
+  const mod = load('app/lib/awsFace.ts', {
+    '@aws-sdk/client-rekognition': { ...sdk, RekognitionClient: Rekognition },
+    '@/app/lib/r2': { getR2Object: async key => { calls.push({ name: 'R2', key }); return { bytes: new Uint8Array([2]) }; } },
+  });
+  return { mod, calls, sessionId };
+}
+function setupAwsTestEnv() {
+  process.env.FACE_VERIFICATION_PROVIDER = 'aws';
+  process.env.FACE_AWS_DATA_USE_REVIEWED = 'true';
+  process.env.FACE_AWS_REGION = 'test-region';
+  process.env.FACE_AWS_ACCESS_KEY_ID = 'synthetic-key';
+  process.env.FACE_AWS_SECRET_ACCESS_KEY = 'synthetic-secret';
+  process.env.FACE_AWS_BROWSER_ROLE_ARN = 'arn:aws:iam::123456789012:role/Test';
+}
+test('AWS creates no audit-image or S3 output and refuses arbitrary reference URLs/keys', async () => {
+  setupAwsTestEnv();
+  const f = awsFixture();
+  const result = await f.mod.awsFaceProvider('sessions/start', { sessionId: 'app-id', referencePhotoKey: 'profiles/enrolled-1.jpg' });
+  assert.equal(result.captureMode, 'aws');
+  assert.equal(f.calls[0].input.Settings.AuditImagesLimit, 0);
+  assert.equal(f.calls[0].input.Settings.OutputConfig, undefined);
+  for (const key of ['https://internal.test/photo.jpg', '../secret.jpg', 'documents/private.png']) {
+    await assert.rejects(() => f.mod.awsFaceProvider('sessions/start', { sessionId: 'app-id', referencePhotoKey: key }));
+  }
+  assert.equal(f.calls.length, 1);
+});
+test('AWS validates liveness and enrolled face on the server', async () => {
+  setupAwsTestEnv();
+  const f = awsFixture();
+  const result = await f.mod.awsFaceProvider('sessions/check', { sessionId: 'app-id', subject: 'ss-1', providerSessionId: f.sessionId, referencePhotoKey: 'profiles/enrolled-1.jpg' });
+  assert.equal(result.status, 'verified');
+  assert.equal(result.faceMatched, true);
+  assert.deepEqual(f.calls.map(x => x.name), ['GetFaceLivenessSessionResultsCommand', 'R2', 'DetectFacesCommand', 'CompareFacesCommand']);
+  const compare = f.calls[3].input;
+  assert.deepEqual(compare.SourceImage.Bytes, new Uint8Array([2]));
+  assert.deepEqual(compare.TargetImage.Bytes, new Uint8Array([1]));
+});
+test('AWS rejects failed/low liveness without reading enrollment and rejects wrong or multiple faces', async () => {
+  setupAwsTestEnv();
+  for (const response of [{ Status: 'FAILED', Confidence: 100 }, { Status: 'SUCCEEDED', Confidence: 94 }]) {
+    const f = awsFixture({ GetFaceLivenessSessionResultsCommand: { ...response, SessionId: '11111111-1111-4111-8111-111111111111', ReferenceImage: { Bytes: new Uint8Array([1]) } } });
+    const r = await f.mod.awsFaceProvider('sessions/check', { sessionId: 'app-id', providerSessionId: f.sessionId, referencePhotoKey: 'profiles/enrolled-1.jpg' });
+    assert.equal(r.status, 'failed'); assert.equal(f.calls.length, 1);
+  }
+  const wrong = awsFixture({ CompareFacesCommand: { FaceMatches: [], UnmatchedFaces: [{}] } });
+  assert.equal((await wrong.mod.awsFaceProvider('sessions/check', { sessionId: 'app-id', providerSessionId: wrong.sessionId, referencePhotoKey: 'profiles/enrolled-1.jpg' })).faceMatched, false);
+  const multiple = awsFixture({ DetectFacesCommand: { FaceDetails: [{}, {}] } });
+  await assert.rejects(() => multiple.mod.awsFaceProvider('sessions/check', { sessionId: 'app-id', providerSessionId: multiple.sessionId, referencePhotoKey: 'profiles/enrolled-1.jpg' }));
+});
+test('AWS withdrawal never claims unavailable remote deletion and thresholds fail closed', async () => {
+  setupAwsTestEnv();
+  const f = awsFixture();
+  assert.deepEqual(await f.mod.awsFaceProvider('sessions/withdraw', {}), { processingStopped: false, deletionCompleted: false });
+  assert.equal(f.calls.length, 0);
+  const p = load('app/lib/awsFacePolicy.ts');
+  for (const score of ['NaN', '89', '101', '-1']) assert.throws(() => p.threshold(score, 95));
+  assert.equal(p.livenessPassed('SUCCEEDED', '99', 95), false);
+  assert.equal(p.livenessPassed('SUCCEEDED', Infinity, 95), false);
+  process.env.FACE_AWS_DATA_USE_REVIEWED = 'false';
+  assert.equal(p.awsFaceConfigured(), false);
 });
