@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   const employeeId = perm.user.employeeId;
   if (!employeeId) return NextResponse.json({ error: "No employee profile linked" }, { status: 400 });
   // Browser POSTs must originate from this application.
-  if (request.headers.get("origin") !== new URL(request.url).origin) {
+  if (request.headers.get("origin") !== new URL(process.env.IDENTITY_APP_ORIGIN || request.url).origin) {
     return NextResponse.json({ error: "Invalid origin" }, { status: 403 });
   }
   const body = await request.json().catch(() => null);
