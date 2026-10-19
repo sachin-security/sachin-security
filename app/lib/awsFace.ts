@@ -45,18 +45,22 @@ export async function awsFaceProvider(path: string, payload: Record<string, unkn
   if (path !== "sessions/check" || typeof payload.providerSessionId !== "string" || !validEnrollmentKey(payload.referencePhotoKey)) throw new Error("Invalid AWS face operation");
   const result = await client.send(new GetFaceLivenessSessionResultsCommand({ SessionId: payload.providerSessionId }));
   const base = { sessionId: payload.sessionId, subject: payload.subject, status: "failed", livenessPassed: false, faceMatched: false };
-  if (result.SessionId !== payload.providerSessionId || !livenessPassed(result.Status, result.Confidence, threshold(process.env.FACE_AWS_LIVENESS_THRESHOLD, 95)) || !result.ReferenceImage?.Bytes) return base;
+  if (result.SessionId !== payload.providerSessionId) return { ...base, reason: "invalid_session" };
+  if (result.Status === "CREATED" || result.Status === "IN_PROGRESS") return { ...base, status: "pending", reason: "processing" };
+  if (result.Status === "EXPIRED") return { ...base, reason: "expired" };
+  if (!livenessPassed(result.Status, result.Confidence, threshold(process.env.FACE_AWS_LIVENESS_THRESHOLD, 95))) return { ...base, reason: "liveness_failed" };
+  if (!result.ReferenceImage?.Bytes) return { ...base, reason: "capture_missing" };
   // Only read a validated profiles/ key from the private configured R2 bucket.
   // Never fetch an arbitrary enrollment URL, and never persist live face bytes.
   const enrollment = await getR2Object(payload.referencePhotoKey);
   if (!enrollment.bytes.length || enrollment.bytes.length > 5 * 1024 * 1024) throw new Error("Enrollment image size is invalid");
   const detected = await client.send(new DetectFacesCommand({ Image: { Bytes: enrollment.bytes }, Attributes: ["DEFAULT"] }));
-  if (detected.FaceDetails?.length !== 1) throw new Error("Enrollment photo must contain exactly one face");
+  if (detected.FaceDetails?.length !== 1) return { ...base, reason: "enrollment_face_invalid" };
   const compared = await client.send(new CompareFacesCommand({
     SourceImage: { Bytes: enrollment.bytes }, TargetImage: { Bytes: result.ReferenceImage.Bytes },
     SimilarityThreshold: threshold(process.env.FACE_AWS_MATCH_THRESHOLD, 99), QualityFilter: "AUTO",
   }));
   const faceMatched = compared.FaceMatches?.length === 1 && !compared.UnmatchedFaces?.length &&
     (compared.FaceMatches[0].Similarity ?? 0) >= threshold(process.env.FACE_AWS_MATCH_THRESHOLD, 99);
-  return { ...base, status: faceMatched ? "verified" : "failed", livenessPassed: true, faceMatched };
+  return { ...base, status: faceMatched ? "verified" : "failed", livenessPassed: true, faceMatched, ...(!faceMatched ? { reason: "face_mismatch" } : {}) };
 }
