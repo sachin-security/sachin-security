@@ -131,6 +131,20 @@ export async function POST(request: Request) {
     if (session.provider === "aws" && session.referencePhotoKey !== employee.profileFilename) return NextResponse.json({ error: "Enrollment photo changed. Verify again." }, { status: 409 });
     const result = await identityProvider("sessions/check", { providerSessionId: session.providerSessionId, sessionId: session.id, subject: employeeId, kind, provider: session.provider || "hosted", referencePhotoKey: employee.profileFilename });
     if (!verifiedResult(kind, result, employeeId, session.id)) {
+      if (session.provider === "aws" && kind === "face") {
+        const messages: Record<string, string> = {
+          processing: "AWS is still processing your face challenge. Wait five seconds, then press Check verification again. Do not start a new challenge yet.",
+          expired: "This face session expired. Press Start again and complete a new challenge within three minutes.",
+          liveness_failed: "The live face check did not pass. Press Start again, use even front lighting, keep your face unobstructed and follow the camera instructions. Contact HR if it keeps failing.",
+          capture_missing: "AWS could not return a usable face capture. Press Start again and retry in good lighting.",
+          enrollment_face_invalid: "Your saved enrollment photo does not contain exactly one detectable face. Ask HR to replace it with a clear photo of you, then start again.",
+          face_mismatch: "The live face did not match your saved enrollment photo at the required confidence. Confirm you are signed in to your own account and ask HR to check your enrollment photo. Contact HR for manual attendance review if needed.",
+          invalid_session: "The face session could not be validated. Press Start again.",
+        };
+        const code = typeof result.reason === "string" && Object.hasOwn(messages, result.reason) ? result.reason : "invalid_session";
+        await sessions.updateOne({ _id: session._id }, { $set: { lastCheckCode: code, lastCheckedAt: new Date() } });
+        return NextResponse.json({ verified: false, pending: code === "processing", error: messages[code] });
+      }
       return NextResponse.json({ verified: false, error: "Verification is incomplete or was unsuccessful. Complete it in the verification tab, then check again." });
     }
     if (kind === "face" && session.photoVersion !== photoVersion(employee.profileUrl)) {
