@@ -275,7 +275,7 @@ test('AWS rejects failed/low liveness without reading enrollment and rejects wro
   const wrong = awsFixture({ CompareFacesCommand: { FaceMatches: [], UnmatchedFaces: [{}] } });
   assert.equal((await wrong.mod.awsFaceProvider('sessions/check', { sessionId: 'app-id', providerSessionId: wrong.sessionId, referencePhotoKey: 'profiles/enrolled-1.jpg' })).faceMatched, false);
   const multiple = awsFixture({ DetectFacesCommand: { FaceDetails: [{}, {}] } });
-  await assert.rejects(() => multiple.mod.awsFaceProvider('sessions/check', { sessionId: 'app-id', providerSessionId: multiple.sessionId, referencePhotoKey: 'profiles/enrolled-1.jpg' }));
+  assert.equal((await multiple.mod.awsFaceProvider('sessions/check', { sessionId: 'app-id', providerSessionId: multiple.sessionId, referencePhotoKey: 'profiles/enrolled-1.jpg' })).reason, 'enrollment_face_invalid');
 });
 test('AWS withdrawal never claims unavailable remote deletion and thresholds fail closed', async () => {
   setupAwsTestEnv();
@@ -288,4 +288,23 @@ test('AWS withdrawal never claims unavailable remote deletion and thresholds fai
   assert.equal(p.livenessPassed('SUCCEEDED', Infinity, 95), false);
   process.env.FACE_AWS_DATA_USE_REVIEWED = 'false';
   assert.equal(p.awsFaceConfigured(), false);
+});
+
+test('AWS distinguishes processing, expiry, liveness and mismatch without approving a failed face', async () => {
+  setupAwsTestEnv();
+  for (const [status, confidence, reason, expectedStatus] of [
+    ['CREATED', 99, 'processing', 'pending'], ['IN_PROGRESS', 99, 'processing', 'pending'],
+    ['EXPIRED', 99, 'expired', 'failed'], ['FAILED', 99, 'liveness_failed', 'failed'],
+    ['SUCCEEDED', 94, 'liveness_failed', 'failed'],
+  ]) {
+    const f = awsFixture({ GetFaceLivenessSessionResultsCommand: { SessionId: '11111111-1111-4111-8111-111111111111', Status: status, Confidence: confidence } });
+    const r = await f.mod.awsFaceProvider('sessions/check', { sessionId: 'app-id', subject: 'ss-1', providerSessionId: f.sessionId, referencePhotoKey: 'profiles/enrolled-1.jpg' });
+    assert.equal(r.reason, reason); assert.equal(r.status, expectedStatus);
+    assert.equal(policy.verifiedResult('face', r, 'ss-1', 'app-id'), false);
+    assert.equal(f.calls.length, 1);
+  }
+  const f = awsFixture({ CompareFacesCommand: { FaceMatches: [], UnmatchedFaces: [{}] } });
+  const r = await f.mod.awsFaceProvider('sessions/check', { sessionId: 'app-id', subject: 'ss-1', providerSessionId: f.sessionId, referencePhotoKey: 'profiles/enrolled-1.jpg' });
+  assert.equal(r.reason, 'face_mismatch'); assert.equal(r.livenessPassed, true);
+  assert.equal(policy.verifiedResult('face', r, 'ss-1', 'app-id'), false);
 });
