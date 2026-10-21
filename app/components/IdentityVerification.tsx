@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import type { FacePrivacyNotice } from "@/app/lib/facePrivacy";
+import { checkFaceResult } from "@/app/lib/faceCheck";
 const AwsFaceCapture = dynamic(() => import("./AwsFaceCapture"), { ssr: false, loading: () => <p>Loading secure camera check…</p> });
 
 export default function IdentityVerification({ kind, onVerified, faceNotice, verifiedId }: {
@@ -15,22 +16,44 @@ export default function IdentityVerification({ kind, onVerified, faceNotice, ver
   const [consent, setConsent] = useState(false);
   const [declined, setDeclined] = useState(false);
   const [receiptId, setReceiptId] = useState("");
+  const operation = useRef<AbortController | null>(null);
+  useEffect(() => () => { operation.current?.abort(); }, []);
   const label = kind === "face" ? "Face verification" : "Aadhaar OTP verification";
-  async function run(action: "start" | "check") {
+  async function run(action: "start" | "check", sessionId = session?.id) {
+    if (operation.current) return;
+    const controller = new AbortController();
+    operation.current = controller;
     setBusy(true); setError("");
     try {
-      const res = await fetch("/api/identity", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind, action, id: session?.id,
+      const request = async () => {
+        const res = await fetch("/api/identity", { method: "POST", headers: { "Content-Type": "application/json" }, signal: controller.signal,
+        body: JSON.stringify({ kind, action, id: sessionId,
           ...(kind === "face" ? { faceConsent: { accepted: consent, noticeVersion: faceNotice?.version } } : {}),
         }) });
-      const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || "Verification failed");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Verification failed");
+        return data;
+      };
+      if (action === "check" && session?.captureMode === "aws") {
+        const id = await checkFaceResult(request, controller.signal);
+        controller.signal.throwIfAborted();
+        onVerified(id); setSession(null); return;
+      }
+      const data = await request();
+      controller.signal.throwIfAborted();
+      if (data.error) throw new Error(data.error || "Verification failed");
       if (action === "start") { setSession({ id: data.id, url: data.url, captureMode: data.captureMode, awsSessionId: data.awsSessionId, region: data.region }); setReceiptId(data.id); setCaptureFinished(false); }
       else if (data.verified) { onVerified(data.id); setSession(null); }
-    } catch (e) { setError(e instanceof Error ? e.message : "Verification failed"); }
-    finally { setBusy(false); }
+    } catch (e) {
+      if (!controller.signal.aborted) {
+        setError(e instanceof Error ? e.message : "Verification failed");
+        if (session?.captureMode === "aws") { setSession(null); setConsent(false); }
+      }
+    }
+    finally { if (operation.current === controller) { operation.current = null; setBusy(false); } }
   }
   async function withdraw() {
+    operation.current?.abort(); operation.current = null;
     const id = receiptId || verifiedId;
     setBusy(true); setConsent(false); setSession(null); onVerified("");
     try {
@@ -59,20 +82,21 @@ export default function IdentityVerification({ kind, onVerified, faceNotice, ver
     </label>
     {session ? <div className="space-y-2">
       {session.captureMode === "aws" ? <>
-        <p>Allow camera access when asked. Follow the live face instructions; a photograph alone cannot complete this check. This session expires in three minutes.</p>
-        {consent && !captureFinished && session.awsSessionId && session.region && <AwsFaceCapture id={session.id} sessionId={session.awsSessionId} region={session.region}
-          onComplete={() => { setCaptureFinished(true); void run("check"); }} onCancel={() => { void withdraw(); }}
-          onError={message => { setCaptureFinished(true); setError(message); }} />}
+        <p>Allow the camera, then move your face into the oval as directed. There are no flashing lights. We check the result automatically against your saved employee photo.</p>
+        {consent && !captureFinished && session.awsSessionId && session.region && <AwsFaceCapture key={session.id} id={session.id} sessionId={session.awsSessionId} region={session.region}
+          onComplete={() => { setCaptureFinished(true); void run("check", session.id); }} onCancel={() => { void withdraw(); }}
+          onError={message => { setCaptureFinished(true); setSession(null); setConsent(false); setError(message); }} />}
+        {captureFinished && busy && <p role="status">Checking your face against your saved employee photo…</p>}
       </> : <>
         {consent && <a className="block text-amber-800 underline" href={session.url} target="_blank" rel="noopener noreferrer">Open secure verification (new tab)</a>}
         <p>Complete verification in that tab, then return here. Sessions expire after five minutes.</p>
       </>}
-      <button type="button" disabled={busy || !consent || (session.captureMode === "aws" && !captureFinished)} onClick={() => run("check")} className="rounded border px-3 py-2 disabled:opacity-50">{busy ? "Checking…" : "Check verification"}</button>
+      {session.captureMode !== "aws" && <button type="button" disabled={busy || !consent} onClick={() => run("check")} className="rounded border px-3 py-2 disabled:opacity-50">{busy ? "Checking…" : "Check verification"}</button>}
       <button type="button" disabled={busy} onClick={() => setSession(null)} className="ml-2 underline">Start again</button>
     </div> : <button type="button" disabled={busy || !consent} onClick={() => run("start")} className="rounded border px-3 py-2 disabled:opacity-50">{busy ? "Starting…" : `Start ${label.toLowerCase()}`}</button>}
     </>}
     {kind === "face" && <div className="mt-2">
-      {receiptId || verifiedId ? <button type="button" disabled={busy} onClick={withdraw} className="underline">Withdraw face consent</button> : <button type="button" disabled={busy} onClick={() => { setConsent(false); setDeclined(true); }} className="underline">I do not consent</button>}
+      {receiptId || verifiedId ? <button type="button" onClick={withdraw} className="underline">Withdraw face consent</button> : <button type="button" disabled={busy} onClick={() => { setConsent(false); setDeclined(true); }} className="underline">I do not consent</button>}
       <p className="mt-2 text-xs">Your browser or provider will ask for camera permission separately. Giving camera permission does not submit an attendance punch.</p>
     </div>}
     {error && <p role="alert" className="mt-2 text-red-700">{error}</p>}

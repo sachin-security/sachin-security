@@ -133,7 +133,13 @@ export async function POST(request: Request) {
     if (!verifiedResult(kind, result, employeeId, session.id)) {
       if (session.provider === "aws" && kind === "face") {
         const messages: Record<string, string> = {
-          processing: "AWS is still processing your face challenge. Wait five seconds, then press Check verification again. Do not start a new challenge yet.",
+          processing: "Your face result is still processing. Please wait while we check automatically.",
+          lighting_low: "The camera image is too dark. Retry facing a soft indoor light, with your whole face visible.",
+          lighting_high: "The camera image has too much glare. Move away from direct sunlight or a bright light and retry.",
+          face_obstructed: "The camera could not see your whole face. Remove anything covering your face and retry, or contact HR for assistance.",
+          video_quality_low: "The camera video quality was too low. Clean the lens, use a stable connection and retry in portrait mode.",
+          face_not_aligned: "The camera could not keep your face aligned. Hold the phone upright and move into the oval as directed.",
+          eyes_closed: "Keep your eyes open during the short camera check and retry.",
           expired: "This face session expired. Press Start again and complete a new challenge within three minutes.",
           liveness_failed: "The live face check did not pass. Press Start again, use even front lighting, keep your face unobstructed and follow the camera instructions. Contact HR if it keeps failing.",
           capture_missing: "AWS could not return a usable face capture. Press Start again and retry in good lighting.",

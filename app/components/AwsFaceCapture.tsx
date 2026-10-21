@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useRef } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { FaceLivenessDetectorCore, type AwsCredentialProvider } from "@aws-amplify/ui-react-liveness";
 import { ThemeProvider } from "@aws-amplify/ui-react";
 import "@aws-amplify/ui-react/styles.css";
@@ -25,11 +25,17 @@ export default function AwsFaceCapture({ id, sessionId, region, onComplete, onCa
     const timer = setInterval(() => { void checkActive(); }, 3000);
     return () => { clearInterval(timer); controller.abort(); };
   }, [id]);
-  const credentialProvider: AwsCredentialProvider = useCallback(async () => {
-    const res = await fetch("/api/identity", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "face", action: "credentials", id }) });
-    if (!res.ok) throw new Error("Camera session expired or consent was withdrawn. Start again.");
-    const data = await res.json();
-    return { ...data.credentials, expiration: new Date(data.credentials.expiration) };
+  const credentialProvider = useMemo<AwsCredentialProvider>(() => {
+    let request: ReturnType<AwsCredentialProvider> | undefined;
+    return () => {
+      request ??= (async () => {
+        const res = await fetch("/api/identity", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "face", action: "credentials", id }) });
+        if (!res.ok) throw new Error("Camera session expired or consent was withdrawn. Start again.");
+        const data = await res.json();
+        return { ...data.credentials, expiration: new Date(data.credentials.expiration) };
+      })();
+      return request;
+    };
   }, [id]);
   return <div className="my-3" aria-label="Live face camera check"><ThemeProvider>
     <FaceLivenessDetectorCore sessionId={sessionId} region={region} config={{ credentialProvider }}

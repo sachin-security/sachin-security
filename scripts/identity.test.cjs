@@ -308,3 +308,38 @@ test('AWS distinguishes processing, expiry, liveness and mismatch without approv
   assert.equal(r.reason, 'face_mismatch'); assert.equal(r.livenessPassed, true);
   assert.equal(policy.verifiedResult('face', r, 'ss-1', 'app-id'), false);
 });
+
+test('simplified AWS challenge keeps liveness, face matching and no image storage', async () => {
+  setupAwsTestEnv();
+  const f = awsFixture();
+  await f.mod.awsFaceProvider('sessions/start', { sessionId: 'app-id', referencePhotoKey: 'profiles/enrolled-1.jpg' });
+  assert.deepEqual(f.calls[0].input.Settings.ChallengePreferences, [{ Type: 'FaceMovementChallenge' }]);
+  assert.equal(f.calls[0].input.Settings.AuditImagesLimit, 0);
+  assert.equal(f.calls[0].input.Settings.OutputConfig, undefined);
+  const low = awsFixture({ GetFaceLivenessSessionResultsCommand: {
+    SessionId: f.sessionId, Status: 'SUCCEEDED', Confidence: 94,
+    Feedback: [{ Code: 'HIGH_LIGHTING_DETECTED' }], ReferenceImage: { Bytes: new Uint8Array([1]) },
+  } });
+  const r = await low.mod.awsFaceProvider('sessions/check', { sessionId: 'app-id', subject: 'ss-1', providerSessionId: f.sessionId, referencePhotoKey: 'profiles/enrolled-1.jpg' });
+  assert.equal(r.reason, 'lighting_high'); assert.equal(r.livenessPassed, false);
+  assert.equal(policy.verifiedResult('face', r, 'ss-1', 'app-id'), false);
+  assert.equal(low.calls.length, 1);
+});
+
+test('automatic result checking waits only for pending and never approves a failure or cancelled check', async () => {
+  const { checkFaceResult } = load('app/lib/faceCheck.ts');
+  let calls = 0, waits = 0;
+  const id = await checkFaceResult(async () => ++calls < 3 ? { pending: true, error: 'processing' } : { verified: true, id: 'one' }, new AbortController().signal, async () => { waits++; });
+  assert.equal(id, 'one'); assert.equal(calls, 3); assert.equal(waits, 2);
+  calls = 0;
+  await assert.rejects(() => checkFaceResult(async () => { calls++; return { verified: false, error: 'face mismatch' }; }, new AbortController().signal), /face mismatch/);
+  assert.equal(calls, 1);
+  calls = 0;
+  await assert.rejects(() => checkFaceResult(async () => { calls++; return { pending: true }; }, new AbortController().signal, async () => {}), /taking too long/);
+  assert.equal(calls, 8);
+  const controller = new AbortController();
+  await assert.rejects(() => checkFaceResult(async () => { controller.abort(); return { verified: true, id: 'one' }; }, controller.signal));
+  const stopped = new AbortController(); stopped.abort(); calls = 0;
+  await assert.rejects(() => checkFaceResult(async () => { calls++; return { verified: true, id: 'one' }; }, stopped.signal));
+  assert.equal(calls, 0);
+});

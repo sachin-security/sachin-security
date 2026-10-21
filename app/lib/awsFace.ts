@@ -37,7 +37,10 @@ export async function awsFaceProvider(path: string, payload: Record<string, unkn
   if (path === "sessions/start") {
     if (!validEnrollmentKey(payload.referencePhotoKey)) throw new Error("Re-upload the enrollment photo before using AWS face verification");
     const result = await client.send(new CreateFaceLivenessSessionCommand({
-      ClientRequestToken: String(payload.sessionId), Settings: { AuditImagesLimit: 0 },
+      ClientRequestToken: String(payload.sessionId), Settings: {
+        AuditImagesLimit: 0,
+        ChallengePreferences: [{ Type: "FaceMovementChallenge" }],
+      },
     }));
     if (!result.SessionId) throw new Error("AWS did not create a liveness session");
     return { providerSessionId: result.SessionId, captureMode: "aws", region: config.region };
@@ -48,7 +51,16 @@ export async function awsFaceProvider(path: string, payload: Record<string, unkn
   if (result.SessionId !== payload.providerSessionId) return { ...base, reason: "invalid_session" };
   if (result.Status === "CREATED" || result.Status === "IN_PROGRESS") return { ...base, status: "pending", reason: "processing" };
   if (result.Status === "EXPIRED") return { ...base, reason: "expired" };
-  if (!livenessPassed(result.Status, result.Confidence, threshold(process.env.FACE_AWS_LIVENESS_THRESHOLD, 95))) return { ...base, reason: "liveness_failed" };
+  if (!livenessPassed(result.Status, result.Confidence, threshold(process.env.FACE_AWS_LIVENESS_THRESHOLD, 95))) {
+    const feedback = new Set(result.Feedback?.map(item => item.Code));
+    const reason = feedback.has("LOW_LIGHTING_DETECTED") ? "lighting_low"
+      : feedback.has("HIGH_LIGHTING_DETECTED") ? "lighting_high"
+      : feedback.has("FACE_OBSTRUCTION_DETECTED") ? "face_obstructed"
+      : feedback.has("LOW_VIDEO_QUALITY_DETECTED") ? "video_quality_low"
+      : feedback.has("FACE_NOT_ALIGNED") || feedback.has("FACE_NOT_VISIBLE") ? "face_not_aligned"
+      : feedback.has("EYES_CLOSED_DETECTED") ? "eyes_closed" : "liveness_failed";
+    return { ...base, reason };
+  }
   if (!result.ReferenceImage?.Bytes) return { ...base, reason: "capture_missing" };
   // Only read a validated profiles/ key from the private configured R2 bucket.
   // Never fetch an arbitrary enrollment URL, and never persist live face bytes.
