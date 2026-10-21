@@ -1,0 +1,38 @@
+'use client';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { CalendarClock, MapPin, Phone, ShieldCheck, FileWarning, RefreshCw, ArrowUpRight } from 'lucide-react';
+import { phoneHref } from '@/app/lib/guardOperations';
+type Shift = { id: string; date: string; startsAt: string; endsAt: string; workLocation: string; post: string; instructions: string };
+type Report = { id: string; title: string; details: string; priority: string; status: string; response?: string; createdAt: string };
+type DutyData = { employee: { fullName: string; employeeId: string; designation: string; workLocation: string; reportingManager?: string }; shifts: Shift[]; company: { name: string; phone: string; email: string }; supervisor: { fullName: string; mobileNumber?: string } | null };
+const when = (value: string) => new Date(value).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+export default function GuardDutyPage() {
+  const [data, setData] = useState<DutyData | null>(null); const [reports, setReports] = useState<Report[]>([]);
+  const [error, setError] = useState(''); const [message, setMessage] = useState(''); const [loading, setLoading] = useState(true); const [busy, setBusy] = useState(false);
+  const [title, setTitle] = useState(''); const [details, setDetails] = useState(''); const [priority, setPriority] = useState('Routine'); const [requestId, setRequestId] = useState('');
+  const [page, setPage] = useState(1); const [pages, setPages] = useState(1);
+  useEffect(() => {
+    const controller = new AbortController(); setLoading(true); setError('');
+    Promise.all([fetch('/api/guard-operations', { signal: controller.signal }).then(r => r.json()), fetch(`/api/guard-incidents?page=${page}`, { signal: controller.signal }).then(r => r.json())]).then(([duty, incidents]) => {
+      if (!duty.success || !incidents.success) throw new Error(duty.error || incidents.error);
+      setData(duty.data); setReports(incidents.data); setPages(incidents.pages);
+    }).catch(e => { if (!controller.signal.aborted) setError(e.message || 'Could not load your duty.'); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [page, message]);
+  async function report(e: React.FormEvent) {
+    e.preventDefault(); setBusy(true); setError(''); setMessage('');
+    const token = requestId || crypto.randomUUID(); setRequestId(token);
+    try { const res = await fetch('/api/guard-incidents', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, details, priority, requestId: token }) }); const value = await res.json(); if (!res.ok || !value.success) throw new Error(value.error || 'Could not save report.'); setTitle(''); setDetails(''); setPriority('Routine'); setRequestId(''); setPage(1); setMessage('Your report is saved. HR can review it in Guard operations.'); } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+  }
+  const phone = data?.company.phone ? phoneHref(data.company.phone) : null;
+  return <div className="space-y-6"><div className="hrms-hero"><div><span className="hrms-eyebrow">GUARD WORKSPACE</span><h1>My duty & site.</h1><p>Your assignment, instructions and support, in one place. All times are IST.</p></div><Link href="/portal" className="hrms-hero-link">Punch attendance <ArrowUpRight size={16} /></Link></div>
+    {error && <p role="alert" className="guard-error">{error}</p>}{message && <p role="status" className="guard-success">{message}</p>}
+    {loading && <p role="status" className="flex items-center gap-2"><RefreshCw size={16} className="animate-spin" /> Loading your duty…</p>}
+    {data && <><div className="grid gap-4 md:grid-cols-3"><div className="guard-info-card"><MapPin size={20} /><span>Assigned site</span><strong>{data.employee.workLocation || 'Ask HR to assign a site'}</strong><small>{data.employee.designation} · {data.employee.employeeId}</small></div><div className="guard-info-card"><ShieldCheck size={20} /><span>Supervisor</span><strong>{data.supervisor?.fullName || data.employee.reportingManager || 'Contact your HR team'}</strong>{data.supervisor?.mobileNumber && phoneHref(data.supervisor.mobileNumber) && <a href={phoneHref(data.supervisor.mobileNumber)!}>Call supervisor</a>}</div><div className="guard-info-card"><Phone size={20} /><span>Company assistance</span><strong>{data.company.phone || 'Contact HR'}</strong>{phone && <a href={phone}>Call company</a>}<small>For urgent help, follow your site emergency procedure.</small></div></div>
+      <section className="guard-panel"><h2 className="guard-heading"><CalendarClock size={20} /> Upcoming duty</h2>{data.shifts.length === 0 ? <p className="guard-empty">No upcoming shifts have been published. Contact your supervisor for the duty plan; your assigned site is shown above.</p> : <div className="grid gap-3 md:grid-cols-2">{data.shifts.map(shift => <article className="guard-duty-card" key={shift.id}><span className="guard-status">Scheduled</span><h3>{shift.workLocation}</h3><p className="font-semibold">{when(shift.startsAt)} → {when(shift.endsAt)}</p>{shift.post && <p>Post: {shift.post}</p>}<p className="whitespace-pre-wrap mt-3 text-slate-600">{shift.instructions || 'Follow the standing instructions given by your supervisor.'}</p></article>)}</div>}</section>
+    </>}
+    <div className="grid gap-6 lg:grid-cols-2"><section id="reports" className="guard-panel scroll-mt-24"><h2 className="guard-heading"><FileWarning size={20} /> Report an incident or duty issue</h2><p className="text-sm text-slate-500 mb-5">Reports appear in HR’s dashboard. This form does not place an emergency call or send an SMS. For immediate assistance, call your supervisor or company contact.</p><form onSubmit={report} className="space-y-4"><label className="guard-label">What happened?<input required maxLength={120} value={title} onChange={e => { setTitle(e.target.value); setRequestId(''); }} placeholder="For example: relief guard not arrived" /></label><label className="guard-label">Priority<select value={priority} onChange={e => { setPriority(e.target.value); setRequestId(''); }}><option>Routine</option><option>Urgent</option></select></label><label className="guard-label">Details<textarea required rows={5} maxLength={3000} value={details} onChange={e => { setDetails(e.target.value); setRequestId(''); }} placeholder="Include the site, time and what support you need. Avoid unnecessary personal information." /></label><button disabled={busy || !data} className="guard-primary">{busy ? 'Saving report…' : 'Send report to HR'}</button></form></section>
+      <section className="guard-panel"><h2 className="guard-heading">My reports</h2>{reports.length === 0 && <p className="guard-empty">No reports yet.</p>}<div className="space-y-3">{reports.map(r => <article className="guard-duty-card" key={r.id}><div className="flex justify-between gap-3"><h3>{r.title}</h3><span className="guard-status">{r.status}</span></div><small>{when(r.createdAt)} · {r.priority}</small><p className="mt-2 whitespace-pre-wrap">{r.details}</p>{r.response && <div className="bg-slate-50 rounded-lg p-3 mt-3"><strong className="text-xs">HR response</strong><p className="whitespace-pre-wrap">{r.response}</p></div>}</article>)}</div>{pages > 1 && <div className="guard-pagination"><button disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</button><span>{page} / {pages}</span><button disabled={page >= pages} onClick={() => setPage(page + 1)}>Next</button></div>}</section></div>
+  </div>;
+}

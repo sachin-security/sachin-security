@@ -4,6 +4,7 @@ import { getCollection } from '@/app/lib/db';
 import { encryptId } from '@/app/lib/idcrypto';
 import { createEmployeeUser } from '@/app/lib/users';
 import { getMissingRequired, buildEmployeeFieldValues } from '@/app/lib/employeeFields';
+import { requirePermission } from '@/app/lib/apiAuth';
 
 // Escape user input so it is treated as a literal string inside a regex.
 function escapeRegex(s: string) {
@@ -12,6 +13,8 @@ function escapeRegex(s: string) {
 
 // GET - Fetch all employees
 export async function GET(request: NextRequest) {
+  const access = await requirePermission('employees:read');
+  if (!access.ok) return NextResponse.json({ success: false, error: access.error }, { status: access.status });
   try {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
@@ -136,6 +139,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Add new employee
 export async function POST(request: NextRequest) {
+  const access = await requirePermission('employees:write');
+  if (!access.ok) return NextResponse.json({ success: false, error: access.error }, { status: access.status });
   try {
     const body = await request.json();
 

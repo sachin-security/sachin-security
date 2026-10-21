@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import CompanyLogo from "@/app/components/CompanyLogo";
 
 const EDITABLE = [
   { key: "mobileNumber", label: "Mobile Number" },
@@ -88,7 +89,7 @@ export default function PortalProfilePage() {
         ) : (
           <div className="space-y-4">
             <div className="bg-white rounded-2xl shadow border border-gray-200 p-6">
-              <h1 className="text-xl font-bold text-gray-900">{profile.fullName}</h1>
+              <div className="flex items-center gap-4 mb-3"><CompanyLogo size={56} /><div><p className="hrms-eyebrow !mb-1">SACHIN SECURITY SERVICES</p><h1 className="text-xl font-bold text-gray-900">{profile.fullName}</h1></div></div>
               <p className="text-gray-500 text-sm">{profile.designation || "—"} · {profile.employeeId}</p>
 
               <div className="mt-4">

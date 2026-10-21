@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
+import CompanyLogo from '@/app/components/CompanyLogo';
 import { Briefcase, Users, Search, LogOut, Menu, X, Home, Building2, Network, CalendarCheck, CalendarClock, FileText, Settings, ExternalLink, UserCog, Wallet, ShieldCheck, ChevronRight, CircleHelp } from 'lucide-react';
 
 const navigation = [
@@ -11,6 +12,7 @@ const navigation = [
     { name: 'Employee directory', icon: Search, path: '/admin/search-employee' },
     { name: 'Add employee', icon: Users, path: '/admin/add-employee' },
     { name: 'Attendance', icon: CalendarCheck, path: '/admin/attendance' },
+    { name: 'Guard operations', icon: ShieldCheck, path: '/admin/guard-operations', roles: ['admin', 'hr'] },
     { name: 'Leave management', icon: CalendarClock, path: '/admin/leave' },
     { name: 'Payroll', icon: Wallet, path: '/admin/payroll', roles: ['admin', 'hr'] },
     { name: 'Documents', icon: FileText, path: '/admin/documents' },
@@ -53,10 +55,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     {open && <button className="hrms-overlay" onClick={() => setOpen(false)} aria-label="Close navigation" />}
     <aside id="workspace-navigation" className={`hrms-sidebar ${open ? 'is-open' : ''}`}>
       <Link href="/admin" className="hrms-brand" onClick={() => setOpen(false)}>
-        <span className="hrms-brand-mark"><ShieldCheck size={26} /></span>
-        <span>Sachin Security<small>PEOPLE WORKSPACE</small></span>
+        <CompanyLogo size={44} />
+        <span>Sachin Security<small>SECURITY OPERATIONS</small></span>
       </Link>
-      <div className="hrms-sidebar-caption">One team. One workspace.</div>
+      <div className="hrms-sidebar-caption">People. Posts. Protection.</div>
       <nav aria-label="Main navigation" className="hrms-navigation">
         {navigation.map(group => {
           const items = group.items.filter(item => !('roles' in item) || item.roles?.includes(user.role || ''));

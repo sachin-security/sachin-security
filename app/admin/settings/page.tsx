@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import CompanyLogo from "@/app/components/CompanyLogo";
 import { Loader2, CalendarDays, Building2 } from "lucide-react";
 import { WEEKDAYS, DEFAULT_COMPANY_SETTINGS, type CompanySettings } from "@/app/lib/settings";
 
@@ -75,7 +76,7 @@ export default function SettingsPage() {
       <form onSubmit={save} className="space-y-6">
         {/* Company Profile */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Company Profile</h2>
+          <div className="flex items-center gap-4 mb-6"><CompanyLogo size={64} /><div><h2 className="text-lg font-bold text-gray-900">Company Profile</h2><p className="text-xs text-gray-500">Sachin Security Services · Since 1996</p></div></div>
           <div className="grid md:grid-cols-2 gap-4">
             {TEXT_FIELDS.map((f) => (
               <div key={f.key} className={f.full ? "md:col-span-2" : ""}>
