@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Briefcase, Users, Search, TrendingUp, Mail, Loader2, Clock, FileText } from 'lucide-react';
+import { Briefcase, Users, Search, TrendingUp, Mail, Loader2, Clock, FileText, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminDashboard() {
@@ -142,15 +142,12 @@ export default function AdminDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-        <p className="text-gray-600">Manage jobs, employees, and recruitment operations</p>
-      </div>
+      <div className="hrms-hero"><div><span className="hrms-eyebrow">PEOPLE & OPERATIONS</span><h1>Your team. At a glance.</h1><p>A connected view of your people and everyday operations.</p></div><Link href="/admin/attendance" className="hrms-hero-link">View attendance <ArrowUpRight size={16} /></Link></div>
 
       {/* Stats Cards */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
         {statsCards.map((stat, index) => (
-          <div key={index} className="bg-white border border-gray-200 rounded-lg p-6">
+          <div key={index} className="hrms-stat-card">
             <div className="flex items-center justify-between mb-3">
               <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center`}>
                 <stat.icon className={`w-6 h-6 ${stat.textColor}`} />
@@ -162,7 +159,7 @@ export default function AdminDashboard() {
               )}
             </div>
             <p className="text-gray-600 text-sm mb-1">{stat.label}</p>
-            <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+            <p className="text-3xl font-semibold tracking-tight text-gray-900">{stat.value}</p>
           </div>
         ))}
       </div>
@@ -178,7 +175,7 @@ export default function AdminDashboard() {
           <Link
             key={index}
             href={tile.href}
-            className={`${tile.color} border-2 rounded-lg p-6 hover:shadow-lg transition-shadow relative`}
+            className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md hover:border-slate-300 transition-all relative"
           >
             {tile.badge && (
               <div className="absolute top-4 right-4">
@@ -190,7 +187,7 @@ export default function AdminDashboard() {
             <div className={`w-12 h-12 ${tile.color} rounded-lg flex items-center justify-center mb-4`}>
               <tile.icon className={`w-6 h-6 ${tile.iconColor}`} />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">{tile.title}</h3>
+            <h3 className="text-base font-semibold text-gray-900 mb-2">{tile.title}</h3>
             <p className="text-gray-600">{tile.description}</p>
           </Link>
         ))}

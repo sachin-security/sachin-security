@@ -1,8 +1,8 @@
 // app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
-import Nav from "@/app/components/Navbar";
-import Footer from "@/app/components/Footer";
+import SiteFrame from "@/app/components/SiteFrame";
+
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sachinsecurity.co.in"),
@@ -103,9 +103,7 @@ export default function RootLayout({
         <link rel="icon" href="/logo.png" type="image/png" sizes="32x32" />
       </head>
       <body>
-        <Nav />
-        {children}
-        <Footer />
+        <SiteFrame>{children}</SiteFrame>
       </body>
     </html>
   );

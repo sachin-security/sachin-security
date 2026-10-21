@@ -1,92 +1,39 @@
-"use client";
-import { useState } from "react";
-import { signIn } from "next-auth/react";
-import Image from "next/image";
-import { Loader2 } from "lucide-react";
-
+'use client';
+import { useState } from 'react';
+import { signIn } from 'next-auth/react';
+import Image from 'next/image';
+import { ArrowRight, Eye, EyeOff, Loader2, ShieldCheck, Users, CalendarCheck, Wallet } from 'lucide-react';
 export default function LoginPage() {
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [visible, setVisible] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  async function submit(e: React.FormEvent) {
+    e.preventDefault(); setError(''); setLoading(true);
     try {
-      const res = await signIn("credentials", {
-        identifier,
-        password,
-        redirect: false,
-      });
-
-      if (res?.error) {
-        setError(res.error === "CredentialsSignin"
-          ? "Invalid email/employee ID or password"
-          : "Sign-in is unavailable. Ask your administrator to check the database and account setup.");
-        setIsLoading(false);
-      } else {
-        // Middleware routes staff to /admin and employees to /portal (and forces
-        // a password reset when required).
-        window.location.href = "/admin";
-      }
-    } catch (err) {
-      setError("Something went wrong. Please try again.");
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
-        <div className="flex flex-col items-center text-center mb-6">
-          <div className="relative w-16 h-16 mb-3">
-            <Image src="/logo.png" alt="Sachin Security Services" fill className="object-contain" priority />
-          </div>
-          <h1 className="text-xl font-bold text-gray-900">Welcome to Sachin Security</h1>
-          <p className="text-sm text-gray-500 mt-1">Sign in to your account</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            type="text"
-            placeholder="Email or Employee ID"
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            required
-            disabled={isLoading}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:bg-gray-100"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={isLoading}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:bg-gray-100"
-          />
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 disabled:bg-gray-400 flex items-center justify-center gap-2"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Signing in…
-              </>
-            ) : (
-              "Login"
-            )}
-          </button>
+      const res = await signIn('credentials', { identifier, password, redirect: false });
+      if (res?.error) { setError(res.error === 'CredentialsSignin' ? 'Invalid email/employee ID or password.' : 'Sign-in is unavailable. Please contact your administrator.'); setLoading(false); }
+      else window.location.href = '/admin';
+    } catch { setError('Could not sign in. Please try again.'); setLoading(false); }
+  }
+  return <div className="hrms-ui hrms-login">
+    <section className="hrms-login-story" aria-label="Sachin Security workspace">
+      <div className="hrms-login-wordmark"><ShieldCheck size={28} /><span>Sachin Security<small>PEOPLE WORKSPACE</small></span></div>
+      <div className="hrms-login-story-content"><span className="hrms-eyebrow">BUILT AROUND YOUR PEOPLE</span><h1>A better day<br />starts together.</h1><p>Your people, attendance and everyday operations.<br className="hidden xl:block" /> All in one thoughtfully organised workspace.</p><div className="hrms-login-features"><span><Users size={18} /> People management</span><span><CalendarCheck size={18} /> Attendance & leave</span><span><Wallet size={18} /> Payroll & documents</span></div></div>
+      <p className="hrms-login-signature">Trusted service. Since 1996.</p>
+    </section>
+    <section className="hrms-login-form-side">
+      <div className="hrms-login-card"><Image src="/logo.png" width={64} height={64} alt="Sachin Security Services" className="object-contain mb-7" priority /><span className="hrms-eyebrow">WELCOME TO YOUR WORKSPACE</span><h2>Good to see you.</h2><p className="hrms-login-description">Sign in to manage your day.</p>
+        <form onSubmit={submit} className="space-y-5">
+          <div><label htmlFor="login-identifier" className="hrms-field-label">Email or employee ID</label><input id="login-identifier" autoComplete="username" placeholder="Enter your email or employee ID" value={identifier} onChange={e => setIdentifier(e.target.value)} required disabled={loading} className="hrms-login-input" /></div>
+          <div><label htmlFor="login-password" className="hrms-field-label">Password</label><div className="relative"><input id="login-password" autoComplete="current-password" type={visible ? 'text' : 'password'} placeholder="Enter your password" value={password} onChange={e => setPassword(e.target.value)} required disabled={loading} className="hrms-login-input pr-12" /><button type="button" className="hrms-password-toggle" aria-label={visible ? 'Hide password' : 'Show password'} onClick={() => setVisible(!visible)}>{visible ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>
+          {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+          <button type="submit" disabled={loading} className="hrms-login-submit">{loading ? <><Loader2 size={18} className="animate-spin" /> Signing in…</> : <>Sign in to workspace <ArrowRight size={18} /></>}</button>
         </form>
-
-        {error && <p className="text-red-600 text-sm mt-3 text-center">{error}</p>}
-
-        <p className="text-xs text-gray-400 text-center mt-6">Sachin Security Services Pvt. Ltd.</p>
+        <p className="hrms-login-help">Need access or help signing in?<br />Contact your HR administrator.</p>
       </div>
-    </div>
-  );
+      <div className="hrms-login-legal">Sachin Security Services Pvt. Ltd. <span>Employee & staff access</span></div>
+    </section>
+  </div>;
 }

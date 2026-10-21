@@ -1,149 +1,80 @@
-// app/admin/layout.tsx
 'use client';
-
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
-import {
-  Briefcase,
-  Users,
-  Search,
-  LogOut,
-  Menu,
-  X,
-  Home,
-  Building2,
-  Network,
-  CalendarCheck,
-  CalendarClock,
-  FileText,
-  Settings,
-  ExternalLink,
-  UserCog,
-  Wallet
-} from 'lucide-react';
+import { Briefcase, Users, Search, LogOut, Menu, X, Home, Building2, Network, CalendarCheck, CalendarClock, FileText, Settings, ExternalLink, UserCog, Wallet, ShieldCheck, ChevronRight, CircleHelp } from 'lucide-react';
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [role, setRole] = useState<string | null>(null);
+const navigation = [
+  { label: 'Workspace', items: [{ name: 'Overview', icon: Home, path: '/admin' }] },
+  { label: 'People & operations', items: [
+    { name: 'Employee directory', icon: Search, path: '/admin/search-employee' },
+    { name: 'Add employee', icon: Users, path: '/admin/add-employee' },
+    { name: 'Attendance', icon: CalendarCheck, path: '/admin/attendance' },
+    { name: 'Leave management', icon: CalendarClock, path: '/admin/leave' },
+    { name: 'Payroll', icon: Wallet, path: '/admin/payroll', roles: ['admin', 'hr'] },
+    { name: 'Documents', icon: FileText, path: '/admin/documents' },
+  ] },
+  { label: 'Organisation', items: [
+    { name: 'Organisation', icon: Building2, path: '/admin/organization' },
+    { name: 'Reporting structure', icon: Network, path: '/admin/reporting' },
+    { name: 'Job openings', icon: Briefcase, path: '/admin/all-jobs' },
+    { name: 'Create job', icon: Briefcase, path: '/admin/add-job' },
+  ] },
+  { label: 'Administration', items: [
+    { name: 'Settings', icon: Settings, path: '/admin/settings' },
+    { name: 'User management', icon: UserCog, path: '/admin/users', roles: ['admin'] },
+    { name: 'Support messages', icon: CircleHelp, path: '/admin/support-messages' },
+    { name: 'Employee portal', icon: ExternalLink, path: '/portal' },
+  ] },
+];
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<{ name?: string; role?: string }>({});
   const pathname = usePathname();
-  const router = useRouter();
-
-  // Role drives visibility of admin-only nav items (e.g. User Management).
   useEffect(() => {
-    fetch('/api/auth/session')
-      .then((r) => r.json())
-      .then((s) => setRole(s?.user?.role ?? null))
-      .catch(() => {});
+    const controller = new AbortController();
+    fetch('/api/auth/session', { signal: controller.signal }).then(r => r.json()).then(s => setUser(s?.user || {})).catch(() => {});
+    return () => controller.abort();
   }, []);
-
-  const handleLogout = async () => {
-    if (confirm('Are you sure you want to logout?')) {
-      await signOut({ callbackUrl: '/admin/login' });
-    }
-  };
-
-  // app/admin/layout.tsx - Add this to navItems array
-const navItems = [
-  { name: 'Dashboard', icon: Home, path: '/admin' },
-  { name: 'All Jobs', icon: Briefcase, path: '/admin/all-jobs' }, // ADD THIS
-  { name: 'Add Job', icon: Briefcase, path: '/admin/add-job' },
-  { name: 'Add Employee', icon: Users, path: '/admin/add-employee' },
-  { name: 'Search Employee', icon: Search, path: '/admin/search-employee' },
-  { name: 'Organization', icon: Building2, path: '/admin/organization' },
-  { name: 'Reporting', icon: Network, path: '/admin/reporting' },
-  { name: 'Attendance', icon: CalendarCheck, path: '/admin/attendance' },
-  { name: 'Leave', icon: CalendarClock, path: '/admin/leave' },
-  { name: 'Payroll', icon: Wallet, path: '/admin/payroll', roles: ['admin', 'hr'] },
-  { name: 'Documents', icon: FileText, path: '/admin/documents' },
-  { name: 'Settings', icon: Settings, path: '/admin/settings' },
-  { name: 'User Management', icon: UserCog, path: '/admin/users', adminOnly: true },
-  { name: 'Support Ticket', icon: Search, path: '/admin/support-messages' },
-  { name: 'Employee Portal', icon: ExternalLink, path: '/portal' },
-
-].filter((item) => (!item.adminOnly || role === 'admin') && (!item.roles || (role != null && item.roles.includes(role))));
-
-  // The login page is standalone — it must not render the admin sidebar/nav chrome.
-  if (pathname === '/admin/login') {
-    return <>{children}</>;
-  }
-
-  return (
-    <div className="min-h-screen bg-white">
-      {/* Top Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 h-16">
-        <div className="h-full px-4 flex items-center justify-between">
-          {/* Logo & Mobile Menu */}
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="lg:hidden p-2 hover:bg-gray-100 rounded-lg text-black"
-            >
-              {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-            <Link href='/admin/login' className="text-xl font-bold text-gray-900">
-              Sachin Security <span className="text-amber-600">Admin</span>
-            </Link>
-          </div>
-
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white hover:bg-gray-800 rounded-lg font-medium"
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">Logout</span>
-          </button>
-        </div>
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('keydown', close);
+    return () => document.removeEventListener('keydown', close);
+  }, [open]);
+  if (pathname === '/admin/login') return <>{children}</>;
+  const current = navigation.flatMap(group => group.items).find(item => item.path === pathname)?.name || 'Workspace';
+  const initials = (user.name || 'HR').split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase();
+  async function logout() { if (confirm('Sign out of your workspace?')) await signOut({ callbackUrl: '/admin/login' }); }
+  return <div className="hrms-ui hrms-shell">
+    <a href="#workspace-content" className="hrms-skip">Skip to workspace</a>
+    {open && <button className="hrms-overlay" onClick={() => setOpen(false)} aria-label="Close navigation" />}
+    <aside id="workspace-navigation" className={`hrms-sidebar ${open ? 'is-open' : ''}`}>
+      <Link href="/admin" className="hrms-brand" onClick={() => setOpen(false)}>
+        <span className="hrms-brand-mark"><ShieldCheck size={26} /></span>
+        <span>Sachin Security<small>PEOPLE WORKSPACE</small></span>
+      </Link>
+      <div className="hrms-sidebar-caption">One team. One workspace.</div>
+      <nav aria-label="Main navigation" className="hrms-navigation">
+        {navigation.map(group => {
+          const items = group.items.filter(item => !('roles' in item) || item.roles?.includes(user.role || ''));
+          return <div key={group.label} className="hrms-nav-group"><p>{group.label}</p>{items.map(item => {
+            const active = pathname === item.path || (item.path !== '/admin' && pathname.startsWith(item.path + '/'));
+            return <Link href={item.path} key={item.path} aria-current={active ? 'page' : undefined} className={`hrms-nav-link ${active ? 'is-active' : ''}`} onClick={() => setOpen(false)}><item.icon size={18} /><span>{item.name}</span>{active && <ChevronRight size={14} />}</Link>;
+          })}</div>;
+        })}
       </nav>
-
-      {/* Sidebar */}
-      <aside
-        className={`fixed top-16 left-0 bottom-0 w-64 bg-white border-r border-gray-200 z-40 overflow-y-auto transform lg:transform-none ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0`}
-      >
-        <nav className="p-4 space-y-2">
-          {navItems.map((item) => {
-            const isActive = pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                href={item.path}
-                onClick={() => setIsSidebarOpen(false)}
-                className={`flex items-center gap-3 px-4 py-0.5 rounded-lg font-medium ${
-                  isActive
-                    ? 'bg-amber-600 text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <item.icon className="w-5 h-5" />
-                {item.name}
-              </Link>
-            );
-          })}
-        </nav>
-      </aside>
-
-      {/* Main Content */}
-      <main className="pt-16 lg:pl-64">
-        <div className="p-6">
-          {children}
-        </div>
-      </main>
-
-      {/* Mobile Overlay */}
-      {isSidebarOpen && (
-        <div
-          onClick={() => setIsSidebarOpen(false)}
-          className="fixed inset-0 bg-black/20 z-30 lg:hidden"
-        />
-      )}
+      <div className="hrms-sidebar-bottom"><ShieldCheck size={17} /><span>Sachin Security Services<small>People at the heart of every day.</small></span></div>
+    </aside>
+    <div className="hrms-workspace">
+      <header className="hrms-topbar">
+        <div className="flex items-center gap-3 min-w-0"><button className="hrms-menu-button" aria-label={open ? 'Close navigation' : 'Open navigation'} aria-expanded={open} aria-controls="workspace-navigation" onClick={() => setOpen(!open)}>{open ? <X size={21} /> : <Menu size={21} />}</button><div className="hrms-breadcrumb"><span>Workspace</span><ChevronRight size={13} /><strong>{current}</strong></div></div>
+        <div className="flex items-center gap-3"><span className="hrms-user-avatar">{initials}</span><div className="hrms-user-caption"><strong>{user.name || 'Your workspace'}</strong><small>{user.role ? user.role.toUpperCase() : 'STAFF'}</small></div><button onClick={logout} className="hrms-signout" aria-label="Sign out" title="Sign out"><LogOut size={18} /></button></div>
+      </header>
+      <main id="workspace-content" className="hrms-content">{children}</main>
+      <footer className="hrms-app-footer"><span>Sachin Security Services Pvt. Ltd.</span><span>People. Presence. Progress.</span></footer>
     </div>
-  );
+  </div>;
 }
