@@ -24,7 +24,7 @@ export default function ITSection({
 
   return (
   <>
-    <section id="it-security" className="py-4 bg-slate-900 overflow-hidden">
+    <section id="it-security" className="relative py-4 bg-slate-900 overflow-hidden">
       {/* Background accent */}
       <div className="absolute top-0 left-0 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px]" />
       <div className="absolute bottom-0 right-0 w-80 h-80 bg-amber-400/5 rounded-full blur-[100px]" />
