@@ -1,10 +1,11 @@
 // app/admin/support-messages/page.tsx
 'use client';
 
-import { useState, useEffect, SelectHTMLAttributes } from 'react';
+import { useState, useEffect } from 'react';
 import { Mail, Clock, CheckCircle, Loader2, Eye, Trash2, X } from 'lucide-react';
 
 interface SupportMessage {
+  _id: string;
   id: string;
   name: string;
   email: string;
@@ -16,6 +17,9 @@ interface SupportMessage {
 }
 
 export default function SupportMessagesPage() {
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [deletedMessage, setDeletedMessage] = useState<SupportMessage | null>(null);
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [filteredMessages, setFilteredMessages] = useState<SupportMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,6 +56,18 @@ export default function SupportMessagesPage() {
     }
   };
 
+  const deleteMessage = async (message: SupportMessage, restore = false) => {
+    if (!restore && !window.confirm('Delete this message? You can undo this action.')) return;
+    setBusy(true); setNotice('');
+    try {
+      const response = await fetch('/api/contact', { method: 'DELETE', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id:message._id,restore}) });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || 'Could not update message.');
+      if (restore) { setDeletedMessage(null); await fetchMessages(); setNotice('Message restored.'); }
+      else { setMessages(prev => prev.filter(item => item._id !== message._id)); setDeletedMessage(message); setShowDetailsModal(false); setNotice('Message deleted.'); }
+    } catch (error) { setNotice(error instanceof Error ? error.message : 'Could not update message.'); }
+    finally { setBusy(false); }
+  };
   const stats = {
     total: messages.length,
     new: messages.filter(m => m.status === 'New').length,
@@ -65,7 +81,7 @@ export default function SupportMessagesPage() {
   };
 
   const handleStatuschange= async(message:SupportMessage, status:SupportMessage['status'])=>{
-    console.log(stats)
+
     try {  
       const response = await fetch(`/api/contact`, {
         method: 'PATCH',
@@ -106,6 +122,7 @@ export default function SupportMessagesPage() {
         <p className="text-gray-600">Manage customer inquiries and support requests</p>
       </div>
 
+      <div role="status" className="mb-4 flex items-center gap-4"><span>{notice}</span>{deletedMessage && <button disabled={busy} onClick={() => deleteMessage(deletedMessage, true)} className="underline font-semibold">Undo delete</button>}</div>
       {/* Stats Cards */}
       <div className="grid md:grid-cols-4 gap-6 mb-8">
         <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -190,7 +207,7 @@ export default function SupportMessagesPage() {
                 </tr>
               ) : (
                 filteredMessages.map((message) => (
-                  <tr key={message.id} className="hover:bg-gray-50">
+                  <tr key={message._id} className="hover:bg-gray-50">
                     <td className="px-4 py-4 text-sm font-medium text-gray-900">{message.id}</td>
                     <td className="px-4 py-4 text-sm text-gray-900">{message.name}</td>
                     <td className="px-4 py-4 text-sm text-gray-700">{message.email}</td>
@@ -224,12 +241,7 @@ export default function SupportMessagesPage() {
                         >
                           <Eye className="w-4 h-4 text-gray-600" />
                         </button>
-                        {/* <button
-                          className="p-2 hover:bg-gray-100 rounded-lg"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4 text-red-600" />
-                        </button> */}
+                        <button onClick={() => deleteMessage(message)} disabled={busy} className="p-2 hover:bg-red-50 rounded-lg" aria-label={`Delete message ${message.id}`} title="Delete message"><Trash2 className="w-4 h-4 text-red-600" /></button>
                       </div>
                     </td>
                   </tr>
@@ -244,6 +256,8 @@ export default function SupportMessagesPage() {
       {showDetailsModal && selectedMessage && (
         <MessageDetailsModal
           message={selectedMessage}
+          busy={busy}
+          onDelete={() => deleteMessage(selectedMessage)}
           onClose={() => setShowDetailsModal(false)}
         />
       )}
@@ -252,7 +266,7 @@ export default function SupportMessagesPage() {
 }
 
 // Message Details Modal
-function MessageDetailsModal({ message, onClose }: { message: SupportMessage; onClose: () => void }) {
+function MessageDetailsModal({ message, onClose, onDelete, busy }: { message: SupportMessage; onClose: () => void; onDelete: () => void; busy: boolean }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -326,8 +340,8 @@ function MessageDetailsModal({ message, onClose }: { message: SupportMessage; on
           >
             Close
           </button>
-          <button className="flex-1 bg-amber-600 text-white py-2 rounded-lg hover:bg-amber-700 font-semibold">
-            Reply via Email
+          <button onClick={onDelete} disabled={busy} className="flex-1 bg-red-700 text-white py-2 rounded-lg hover:bg-red-800 font-semibold">
+            {busy ? "Please wait…" : "Delete message"}
           </button>
         </div>
       </div>

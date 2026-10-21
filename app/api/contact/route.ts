@@ -1,12 +1,23 @@
 // app/api/contact-us/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getCollection } from '@/app/lib/db';
+import { getSessionUser } from '@/app/lib/apiAuth';
+import { validOpsOrigin } from '@/app/lib/guardOperations';
+import { ObjectId } from 'mongodb';
 
-// GET - Fetch all support messagesconsole.log("Contact route loaded ✅");
-console.log("1Contact route loaded ✅");
+async function staffAccess() {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  if (!['admin', 'hr'].includes(user.role)) return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+  return null;
+}
+
+// GET - Fetch all support messages
+
 
 export async function GET(request: NextRequest) {
-  console.log("2Contact route loaded ✅");
+  const denied = await staffAccess(); if (denied) return denied;
+  
 
   try {
     const { searchParams } = new URL(request.url);
@@ -14,7 +25,7 @@ export async function GET(request: NextRequest) {
     
     const collection = await getCollection('support-messages');
     
-    let query: any = {};
+    const query: Record<string, unknown> = { deletedAt: { $exists: false } };
     if (status) {
       query.status = status;
     }
@@ -29,9 +40,9 @@ export async function GET(request: NextRequest) {
       data: messages,
       count: messages.length
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: error instanceof Error ? error.message : 'Unable to process request' },
       { status: 500 }
     );
   }
@@ -78,9 +89,9 @@ export async function POST(request: NextRequest) {
       message: 'Message sent successfully. We will contact you soon.',
       data: { ...messageData, _id: result.insertedId }
     }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: error instanceof Error ? error.message : 'Unable to process request' },
       { status: 500 }
     );
   }
@@ -89,15 +100,17 @@ export async function POST(request: NextRequest) {
 
 //update contactform
 export async function PATCH(request: NextRequest) {
+  const denied = await staffAccess(); if (denied) return denied;
+  if (!validOpsOrigin(request)) return NextResponse.json({ success: false, error: 'Invalid origin' }, { status: 403 });
   try {
     const { id, status } = await request.json();
-    if (!id || !status) {
+    if (typeof id !== 'string' || !['New', 'In Progress', 'Resolved'].includes(status)) {
       return NextResponse.json({ success: false, error: 'id and status are required' }, { status: 400 });
     }
 
     const collection = await getCollection('support-messages');
     const result = await collection.updateOne(
-      { id: id },
+      { id: id, deletedAt: { $exists: false } },
       { $set: { status } }
     );
 
@@ -106,7 +119,26 @@ export async function PATCH(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, message: 'Status updated successfully' });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'Unable to process request' }, { status: 500 });
+  }
+}
+
+// Recoverable deletion, using the existing collection and immutable MongoDB ID.
+export async function DELETE(request: NextRequest) {
+  const denied = await staffAccess(); if (denied) return denied;
+  if (!validOpsOrigin(request)) return NextResponse.json({ success: false, error: 'Invalid origin' }, { status: 403 });
+  try {
+    const { id, restore } = await request.json();
+    if (typeof id !== 'string' || !/^[a-f0-9]{24}$/i.test(id) || (restore !== undefined && typeof restore !== 'boolean')) return NextResponse.json({ success: false, error: 'Invalid message' }, { status: 400 });
+    const collection = await getCollection('support-messages');
+    const result = await collection.updateOne(
+      { _id: new ObjectId(id), deletedAt: { $exists: !!restore } },
+      restore ? { $unset: { deletedAt: '' }, $set: { updatedAt: new Date() } } : { $set: { deletedAt: new Date(), updatedAt: new Date() } }
+    );
+    if (!result.matchedCount) return NextResponse.json({ success: false, error: 'Message not found' }, { status: 404 });
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ success: false, error: 'Could not update message. Try again.' }, { status: 500 });
   }
 }

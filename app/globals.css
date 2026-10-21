@@ -183,3 +183,5 @@ input[type="number"] {
 .hrms-portal-header-inner { gap: 18px; }
 .hrms-portal-links a { padding-left: 9px; padding-right: 9px; }
 @media (max-width: 767px) { .guard-panel { padding: 18px; } .guard-info-card { padding: 18px; } .hrms-portal-brand { font-size: 12px; } .hrms-portal-brand small { font-size: 7px; letter-spacing: 1px; } }
+
+.visio-credit{padding:18px 24px;background:#f5f6f7;border-top:1px solid #e5e7eb;display:flex;justify-content:center}.visio-credit a{display:inline-flex;align-items:center;gap:10px;color:#52525b;font-size:12px;text-decoration:none}.visio-credit a:hover strong{color:#ab1e2b}.visio-credit a:focus-visible{outline:2px solid #ab1e2b;outline-offset:5px}.visio-credit img{object-fit:contain}.visio-credit strong{display:block;letter-spacing:.08em;font-size:12px;color:#202023}
