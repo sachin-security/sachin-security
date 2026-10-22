@@ -151,8 +151,8 @@ export default function AdminDashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-        {statsCards.map((stat, index) => (
-          <div key={index} className="hrms-stat-card">
+        {statsCards.map((stat) => (
+          <Link key={stat.label} href={stat.href} aria-label={`${stat.label}: ${stat.value}`} className="hrms-stat-card block cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-red-700">
             <div className="flex items-center justify-between mb-3">
               <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center`}>
                 <stat.icon className={`w-6 h-6 ${stat.textColor}`} />
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
             </div>
             <p className="text-gray-600 text-sm mb-1 flex items-center justify-between gap-2">{stat.label}<ArrowUpRight aria-hidden="true" size={16} /></p>
             <p className="text-3xl font-semibold tracking-tight text-gray-900">{stat.value}</p>
-          </div>
+          </Link>
         ))}
       </div>
 
