@@ -99,28 +99,33 @@ export default function AdminDashboard() {
 
   const statsCards = [
     { 
-      label: 'Total Employees', 
+      label: 'Total Employees',
+      href: '/admin/search-employee', 
       value: stats.totalEmployees, 
       icon: Users,
       color: 'bg-gray-100',
       textColor: 'text-gray-900'
     },
     { 
-      label: 'Active Jobs', 
+      label: 'Active Jobs',
+      href: '/admin/all-jobs', 
       value: stats.activeJobs, 
       icon: Briefcase,
       color: 'bg-green-100',
       textColor: 'text-green-600'
     },
     { 
-      label: 'Total Applicants', 
+      label: 'Total Applicants',
+      href: '/admin/all-jobs',
+      hint: 'View applicants by job', 
       value: stats.totalApplicants, 
       icon: TrendingUp,
       color: 'bg-amber-100',
       textColor: 'text-amber-600'
     },
     { 
-      label: 'Support Messages', 
+      label: 'Support Messages',
+      href: '/admin/support-messages', 
       value: stats.supportMessages, 
       icon: Mail,
       color: 'bg-blue-100',
@@ -158,7 +163,7 @@ export default function AdminDashboard() {
                 </span>
               )}
             </div>
-            <p className="text-gray-600 text-sm mb-1">{stat.label}</p>
+            <p className="text-gray-600 text-sm mb-1 flex items-center justify-between gap-2">{stat.label}<ArrowUpRight aria-hidden="true" size={16} /></p>
             <p className="text-3xl font-semibold tracking-tight text-gray-900">{stat.value}</p>
           </div>
         ))}
