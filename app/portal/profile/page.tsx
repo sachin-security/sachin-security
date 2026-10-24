@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import CompanyLogo from "@/app/components/CompanyLogo";
+import EmployeePhotoUpdate from "@/app/components/EmployeePhotoUpdate";
 
 const EDITABLE = [
   { key: "mobileNumber", label: "Mobile Number" },
@@ -109,6 +110,7 @@ export default function PortalProfilePage() {
               </div>
             </div>
 
+            <EmployeePhotoUpdate />
             {/* Editable contact + emergency */}
             <div className="bg-white rounded-2xl shadow border border-gray-200 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-1">My Contact Details</h2>

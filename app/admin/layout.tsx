@@ -13,6 +13,7 @@ const navigation = [
     { name: 'Add employee', icon: Users, path: '/admin/add-employee' },
     { name: 'Attendance', icon: CalendarCheck, path: '/admin/attendance' },
     { name: 'Guard operations', icon: ShieldCheck, path: '/admin/guard-operations', roles: ['admin', 'hr'] },
+    { name: 'Photo requests', icon: Users, path: '/admin/photo-requests', roles: ['admin', 'hr'] },
     { name: 'Leave management', icon: CalendarClock, path: '/admin/leave' },
     { name: 'Payroll', icon: Wallet, path: '/admin/payroll', roles: ['admin', 'hr'] },
     { name: 'Documents', icon: FileText, path: '/admin/documents' },
