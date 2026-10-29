@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { LogOut, Menu, X } from 'lucide-react';
 const LINKS = [
+  { href: '/portal/requests', label: 'My requests' },
   { href: '/portal', label: 'Overview' }, { href: '/portal/duty', label: 'My duty' }, { href: '/portal/profile', label: 'My profile' },
   { href: '/portal/attendance', label: 'Attendance' }, { href: '/portal/leave', label: 'Leave' }, { href: '/portal/documents', label: 'Documents' },
 ];

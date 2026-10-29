@@ -2,7 +2,7 @@
 // Apply for leave (POST) and list requests (GET) scoped by role.
 import { NextResponse } from "next/server";
 import { getCollection } from "@/app/lib/db";
-import { requirePermission } from "@/app/lib/apiAuth";
+import { getSessionUser, requirePermission } from "@/app/lib/apiAuth";
 import { hasPermission } from "@/app/lib/rbac";
 import { countLeaveDays } from "@/app/lib/leave";
 import { computeBalances, getHolidaysInRange } from "@/app/lib/leaveServer";
@@ -10,14 +10,16 @@ import { getWorkingDays } from "@/app/lib/settingsServer";
 
 // GET /api/leave/requests?status=&employeeId=&mine=1
 export async function GET(request: Request) {
-  const perm = await requirePermission("leave:read:self");
-  if (!perm.ok) return NextResponse.json({ success: false, error: perm.error }, { status: perm.status });
-  const user = perm.user;
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  if (!["leave:read:self", "leave:read:all", "leave:approve:team"].some(permission => hasPermission(user.role, permission as import('@/app/lib/rbac').Permission))) return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+  if (!user.employeeId && !hasPermission(user.role, "leave:read:all")) return NextResponse.json({ success: false, error: "No employee profile linked" }, { status: 400 });
 
   const params = new URL(request.url).searchParams;
   const status = params.get("status");
   const employeeIdParam = params.get("employeeId");
   const mine = params.get("mine") === "1";
+  if (mine && !user.employeeId) return NextResponse.json({ success: false, error: "No employee profile linked" }, { status: 400 });
 
   const query: any = {};
   if (status) query.status = status;
