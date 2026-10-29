@@ -18,6 +18,8 @@ const navigation = [
     { name: 'HR services', icon: CircleHelp, path: '/admin/services', roles: ['admin', 'hr'] },
     { name: 'Announcements', icon: FileText, path: '/admin/announcements', roles: ['admin', 'hr'] },
     { name: 'Workforce insights', icon: CalendarCheck, path: '/admin/insights', roles: ['admin', 'hr'] },
+    { name: 'Recruitment', icon: Briefcase, path: '/admin/recruitment', roles: ['admin', 'hr'] },
+    { name: 'Knowledge base', icon: FileText, path: '/admin/knowledge', roles: ['admin', 'hr'] },
     { name: 'Leave management', icon: CalendarClock, path: '/admin/leave' },
     { name: 'Payroll', icon: Wallet, path: '/admin/payroll', roles: ['admin', 'hr'] },
     { name: 'Documents', icon: FileText, path: '/admin/documents' },

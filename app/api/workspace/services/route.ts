@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   try {
     const collection = await getCollection('hrServiceRequests');
     const [data, total, pending] = await Promise.all([collection.find(query, { projection: { _id: 0, submittedBy: 0, requestId: 0 } }).sort({ updatedAt: -1, id: 1 }).skip((page - 1) * 20).limit(20).toArray(), collection.countDocuments(query), collection.countDocuments({ ...base, status: { $in: ['Pending', 'In review'] } })]);
-    return NextResponse.json({ success: true, data, total, pending, page, pages: Math.max(1, Math.ceil(total / 20)) }, { headers: { 'Cache-Control': 'private, no-store' } });
+    return NextResponse.json({ success: true, data:data.map(row=>({...row,overdue:!!row.dueAt&&new Date(row.dueAt)<new Date()&&!closed.includes(row.status)})), total, pending, page, pages: Math.max(1, Math.ceil(total / 20)) }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch { return fail('Could not load records. Please retry.', 503); }
 }
 
@@ -59,7 +59,7 @@ export async function PATCH(request: Request) {
   if (!validOpsOrigin(request)) return fail('Invalid origin.', 403);
   if (Number(request.headers.get('content-length')) > 8000) return fail('Message is too large.', 413);
   const body = await request.json().catch(() => null);
-  if (!body || typeof body.id !== 'string' || !/^[a-f0-9-]{36}$/i.test(body.id) || !Number.isInteger(body.revision) || body.revision < 0 || !['comment', 'review', 'cancel', 'complete'].includes(body.action)) return fail('Invalid action.', 400);
+  if (!body || typeof body.id !== 'string' || !/^[a-f0-9-]{36}$/i.test(body.id) || !Number.isInteger(body.revision) || body.revision < 0 || !['comment', 'review', 'cancel', 'complete', 'assign'].includes(body.action)) return fail('Invalid action.', 400);
   const text = typeof body.text === 'string' ? body.text.trim() : '';
   if (!text || text.length > 2000) return fail('Add a comment or decision reason (up to 2000 characters).', 400);
   try {
@@ -71,11 +71,20 @@ export async function PATCH(request: Request) {
     if (closed.includes(record.status)) return fail('This record is closed. Create a new request if needed.', 409);
     if ((record.events || []).length >= 100) return fail('Conversation limit reached. Contact HR.', 409);
     let status = record.status;
+    const extra:Record<string,unknown>={};
+    if(body.action==='assign'){
+      if(!isStaff(user.role)||definition.key!=='helpdesk')return fail('Only HR/admin can assign helpdesk cases.',403);
+      if(typeof body.owner!=='string'||!body.owner.trim()||body.owner.length>100||typeof body.due!=='string'||!/^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d$/.test(body.due))return fail('Add HR employee ID and valid target time.',400);
+      const dueAt=new Date(body.due+':00+05:30');if(Number.isNaN(dueAt.getTime())||dueAt<=new Date()||new Date(dueAt.getTime()+19800000).toISOString().slice(0,16)!==body.due)return fail('Choose a valid future target time.',400);
+      const owner=await(await getCollection('users')).findOne({employeeId:body.owner.trim(),role:{$in:['admin','hr']}},{projection:{name:1,employeeId:1}});if(!owner)return fail('Choose an employee linked to an HR/admin login.',400);
+      extra.owner={name:owner.name||owner.employeeId,employeeId:owner.employeeId};extra.dueAt=dueAt;
+    }
     if (body.action === 'review') {
       if (!isStaff(user.role)) return fail('Only HR/admin can review.', 403);
       if (record.employeeId === user.employeeId || record.submittedBy === user.id && !definition.staffCreates) return fail('Another HR/admin user must review your own request.', 403);
       const allowed = definition.key === 'helpdesk' ? ['In review', 'Resolved', 'Rejected'] : ['In review', 'Approved', 'Rejected'];
       if (!allowed.includes(body.status)) return fail('Choose a valid review status.', 400);
+      if(definition.key==='performance'&&body.status==='Approved'&&(!Number.isInteger(body.rating)||body.rating<1||body.rating>5))return fail('Choose a review rating between 1 and 5.',400);
       status = body.status;
     }
     if (body.action === 'cancel') {
@@ -87,7 +96,7 @@ export async function PATCH(request: Request) {
       status = 'In review';
     }
     const now = new Date();
-    const result = await collection.updateOne({ id: body.id, revision: body.revision, status: record.status }, { $set: { status, updatedAt: now, events: [...(record.events || []), { at: now, actorId: user.id, author: user.name || user.employeeId || 'HR', type: body.action, text, status }] }, $inc: { revision: 1 } });
+    const result = await collection.updateOne({ id: body.id, revision: body.revision, status: record.status }, { $set: { status, ...extra, updatedAt: now, events: [...(record.events || []), { at: now, actorId: user.id, author: user.name || user.employeeId || 'HR', type: body.action, text, status, ...(definition.key==='performance'&&body.action==='review'&&body.status==='Approved'?{rating:body.rating}:{}) }] }, $inc: { revision: 1 } });
     return result.matchedCount ? NextResponse.json({ success: true }) : fail('Record changed. Refresh before updating.', 409);
   } catch { return fail('Could not update record. Please retry.', 503); }
 }
