@@ -8,6 +8,7 @@ import { Briefcase, Users, Search, LogOut, Menu, X, Home, Building2, Network, Ca
 
 const navigation = [
   { label: 'Workspace', items: [{ name: 'Overview', icon: Home, path: '/admin' }] },
+  { label: 'Assistant', items: [{ name: 'VISIO AI', icon: CircleHelp, path: '/admin/ai' }] },
   { label: 'People & operations', items: [
     { name: 'Employee directory', icon: Search, path: '/admin/search-employee' },
     { name: 'Add employee', icon: Users, path: '/admin/add-employee' },
