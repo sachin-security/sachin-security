@@ -61,6 +61,7 @@ export interface Payslip {
   uanNumber?: string; // UAN, shown on the slip when available
   esiNumber?: string; // ESI number, shown on the slip when available
   month: string; // "YYYY-MM"
+  calendarDays?: number;
   dutyDays: number;
   extraDutyDays: number;
   absentDays: number;

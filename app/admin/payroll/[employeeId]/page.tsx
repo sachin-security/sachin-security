@@ -8,6 +8,7 @@ import {
   computePayroll, formatINR, amountInWords,
   type SalaryComponent, type ComponentCategory, type CalcType, type Payslip,
 } from "@/app/lib/payroll";
+import { isPaushakPayroll, payrollMonthDays, paushakComponents, paushakInputKeys } from "@/app/lib/paushakPayroll";
 
 const CATEGORIES: { value: ComponentCategory; label: string }[] = [
   { value: "info", label: "Info (input)" },
@@ -77,6 +78,8 @@ export default function PayrollEditorPage({ params }: { params: Promise<{ employ
   const [isSaved, setIsSaved] = useState(false);
   const [company, setCompany] = useState<any>(null);
   const [tab, setTab] = useState<"generate" | "config">("generate");
+  const calendarDays = payrollMonthDays(month);
+  const paushak = isPaushakPayroll(employee?.workLocation, month);
 
   useEffect(() => {
     fetch("/api/settings/company").then((r) => r.json()).then((d) => { if (d.success) setCompany(d.data); }).catch(() => {});
@@ -98,8 +101,7 @@ export default function PayrollEditorPage({ params }: { params: Promise<{ employ
         setComponents(data.structure.components || []);
         setLocationRate(data.locationRate ?? null);
         setIsDefault(!!data.structure.isDefault);
-        // Send admins straight to config when nothing is set up yet.
-        if (data.structure.isDefault) setTab("config");
+        if (data.structure.isDefault && !isPaushakPayroll(data.employee?.workLocation, new Date().toISOString().slice(0, 7))) setTab("config");
       }
       await loadHistory();
     } finally {
@@ -443,12 +445,12 @@ export default function PayrollEditorPage({ params }: { params: Promise<{ employ
         <div className="flex flex-wrap items-end gap-3 mb-3">
           <div>
             <label className="block text-xs text-gray-500 mb-1">Month</label>
-            <input type="month" value={month} onChange={(e) => { setMonth(e.target.value); setPayslip(null); setEdits({}); }}
+            <input type="month" value={month} onChange={(e) => { setMonth(e.target.value); setPayslip(null); setEdits({}); setExtraDuty(""); setAbsent(""); }}
               className="px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Extra Duty (days)</label>
-            <input type="number" min={0} value={extraDuty} onChange={(e) => setExtraDuty(e.target.value)} placeholder="0"
+            <input type="number" min={0} step="0.5" value={extraDuty} onChange={(e) => setExtraDuty(e.target.value)} placeholder="0"
               className="w-28 px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
           </div>
           <div>
@@ -456,15 +458,16 @@ export default function PayrollEditorPage({ params }: { params: Promise<{ employ
             <input type="number" min={0} value={absent} onChange={(e) => setAbsent(e.target.value)} placeholder={String(attSummary?.absent ?? 0)}
               className="w-28 px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" />
           </div>
-          <button onClick={runPreview} disabled={generating || isDefault}
+          <button onClick={runPreview} disabled={generating || !calendarDays || (isDefault && !paushak)}
             className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-60">
             {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calculator className="w-4 h-4" />} Generate preview
           </button>
-          {isDefault && <span className="text-xs text-amber-700">Save the structure first.</span>}
+          {isDefault && !paushak && <span className="text-xs text-amber-700">Save the structure in Config Payments first.</span>}
         </div>
 
         {/* Attendance breakdown for the selected month (drives the auto Duty count) */}
         <div className="flex flex-wrap gap-2 mb-4 text-sm">
+          <AttChip label="Calendar days" value={calendarDays} cls="bg-blue-100 text-blue-800" />
           <AttChip label="Present" value={attSummary?.present ?? 0} cls="bg-green-100 text-green-800" />
           <AttChip label="Half Day" value={attSummary?.halfDay ?? 0} cls="bg-amber-100 text-amber-800" />
           <AttChip label="Absent" value={attSummary?.absent ?? 0} cls="bg-red-100 text-red-700" />
@@ -472,16 +475,20 @@ export default function PayrollEditorPage({ params }: { params: Promise<{ employ
           {extraDuty.trim() !== "" && <AttChip label="Extra Duty" value={parseFloat(extraDuty) || 0} cls="bg-blue-100 text-blue-800" />}
           {absent.trim() !== "" && <AttChip label="Absent (used)" value={parseFloat(absent) || 0} cls="bg-red-100 text-red-700" />}
         </div>
+        {paushak && <p className="mb-4 text-sm text-gray-700">Paushak–Halol wage sheet rates apply from October 2026. Regular and extra-duty pay use {calendarDays} calendar days. Public holiday wages use 26 days.</p>}
 
         {/* Adjust variable fixed amounts for this month (advances, deductions, etc.) */}
-        {payslip && (
+        {(payslip || paushak) && (
           <details className="mb-4 border border-gray-200 rounded-lg">
             <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 select-none">Adjust amounts for this month</summary>
             <div className="px-4 py-3 grid grid-cols-2 sm:grid-cols-3 gap-3 border-t border-gray-100">
-              {components.filter((c) => c.calc === "fixed" && !c.autoFromAttendance && !c.autoFromLocation).map((c) => (
+              {(paushak
+                ? paushakComponents.filter((c) => paushakInputKeys.some((key) => key === c.key) && c.key !== "extraDuty")
+                : components.filter((c) => c.calc === "fixed" && !c.autoFromAttendance && !c.autoFromLocation)
+              ).map((c) => (
                 <label key={c.key} className="text-xs text-gray-500">
                   {c.label}
-                  <input type="number" value={edits[c.key] ?? ""} placeholder={String(c.amount ?? 0)}
+                  <input type="number" step="any" value={edits[c.key] ?? ""} placeholder={String(paushak && c.key === "duty" ? dutyDays : c.amount ?? 0)}
                     onChange={(e) => setEdits((p) => ({ ...p, [c.key]: e.target.value }))}
                     className="mt-0.5 w-full px-2 py-1 border border-gray-300 rounded text-gray-900" />
                 </label>
@@ -653,6 +660,7 @@ function PayslipDocument({ payslip: p, company }: { payslip: Payslip; company: a
         {p.esiNumber && <InfoRow k="ESI No." v={p.esiNumber} />}
         <InfoRow k="Duty Days" v={String(p.dutyDays)} />
         <InfoRow k="Extra Duty" v={String(p.extraDutyDays)} />
+        {p.calendarDays && <InfoRow k="Calendar days" v={String(p.calendarDays)} />}
         {p.absentDays ? <InfoRow k="Absent Days" v={String(p.absentDays)} /> : null}
         <InfoRow k="Ref No." v={p.refId} />
         <InfoRow k="Generated" v={new Date(p.generatedAt).toLocaleDateString("en-IN")} />

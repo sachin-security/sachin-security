@@ -11,6 +11,7 @@ import { requirePermission } from "@/app/lib/apiAuth";
 import { istDateString, istMonthString } from "@/app/lib/attendance";
 import { getWorkingDays, getCompanySettings } from "@/app/lib/settingsServer";
 import { readRates } from "@/app/lib/org";
+import { calculatePaushakPayroll, isPaushakPayroll, payrollMonthDays, paushakComponents } from "@/app/lib/paushakPayroll";
 import {
   computePayroll, sanitizeComponents, DEFAULT_PAYROLL_TEMPLATE,
   type ComponentCategory, type SalaryComponent,
@@ -61,7 +62,8 @@ export async function GET(request: NextRequest) {
   const params = new URL(request.url).searchParams;
   const month = (params.get("month") || "").trim();
   const filterLocation = (params.get("workLocation") || "").trim();
-  if (!/^\d{4}-\d{2}$/.test(month)) {
+  const calendarDays = payrollMonthDays(month);
+  if (!calendarDays) {
     return NextResponse.json({ success: false, error: "month (YYYY-MM) is required" }, { status: 400 });
   }
 
@@ -112,6 +114,14 @@ export async function GET(request: NextRequest) {
 
   const workDays = workingDaysSoFar(month, await getWorkingDays());
   const companyName = (await getCompanySettings()).companyName || "Sachin Security Services";
+  const paushakEmployeeIds = employees.filter(e => isPaushakPayroll(e.workLocation, month)).map(e => e.employeeId);
+  const savedPaushak = paushakEmployeeIds.length
+    ? await (await getCollection("payslips")).find(
+        { month, employeeId: { $in: paushakEmployeeIds }, payrollRule: "paushak-calendar" },
+        { projection: { employeeId: 1, lines: 1, dutyDays: 1 } },
+      ).toArray()
+    : [];
+  const savedByEmployee = new Map(savedPaushak.map(slip => [slip.employeeId, slip]));
 
   // Group employees by work location (preserving the sorted order).
   const groups = new Map<string, typeof employees>();
@@ -141,6 +151,18 @@ export async function GET(request: NextRequest) {
   }
 
   for (const [location, emps] of groups) {
+    const paushak = isPaushakPayroll(location, month);
+    if (paushak) {
+      try {
+        for (const employee of emps) {
+          if (savedByEmployee.has(employee.employeeId)) continue;
+          const t = tally.get(employee.employeeId) || { present: 0, halfDay: 0 };
+          calculatePaushakPayroll(employee.designation, month, t.present + t.halfDay * 0.5);
+        }
+      } catch (error) {
+        return NextResponse.json({ success: false, error: `${location}: ${(error as Error).message}` }, { status: 422 });
+      }
+    }
     // Compute each employee's payroll and collect the ordered union of components.
     const colOrder: { key: string; label: string; category: ComponentCategory }[] = [];
     const seenCols = new Set<string>();
@@ -148,7 +170,7 @@ export async function GET(request: NextRequest) {
       const t = tally.get(e.employeeId) || { present: 0, halfDay: 0 };
       const duty = t.present + t.halfDay * 0.5;
       const absent = Math.max(0, workDays - t.present - t.halfDay);
-      const components: SalaryComponent[] = structureByEmp.get(e.employeeId) || DEFAULT_PAYROLL_TEMPLATE;
+      const components: SalaryComponent[] = paushak ? paushakComponents : structureByEmp.get(e.employeeId) || DEFAULT_PAYROLL_TEMPLATE;
       const locRate = rateByLocation.get(String(location).toLowerCase())?.get(String(e.designation || "").toLowerCase());
 
       const overrides: Record<string, number> = {};
@@ -158,12 +180,17 @@ export async function GET(request: NextRequest) {
         if (locRate && c.autoFromLocation === "rate") overrides[c.key] = locRate.rate;
         if (locRate && c.autoFromLocation === "ratePerDay") overrides[c.key] = locRate.ratePerDay;
       }
-      const { values } = computePayroll(components, overrides);
+      const saved = paushak ? savedByEmployee.get(e.employeeId) : undefined;
+      const { values } = saved
+        ? { values: Object.fromEntries(saved.lines.map((line: { key: string; amount: number }) => [line.key, line.amount])) as Record<string, number> }
+        : paushak
+        ? calculatePaushakPayroll(e.designation, month, duty)
+        : computePayroll(components, overrides);
 
       for (const c of components) {
         if (!seenCols.has(c.key)) { seenCols.add(c.key); colOrder.push({ key: c.key, label: c.label, category: c.category }); }
       }
-      return { e, present: t.present, halfDay: t.halfDay, absent, duty, values };
+      return { e, present: t.present, halfDay: t.halfDay, absent, duty: saved?.dutyDays ?? duty, values };
     });
 
     const ws = wb.addWorksheet(sheetName(location, usedNames), { views: [{ showGridLines: false, state: "frozen", ySplit: 4, xSplit: 2 }] });
@@ -179,7 +206,7 @@ export async function GET(request: NextRequest) {
 
     ws.mergeCells(2, 1, 2, totalCols);
     const t2 = ws.getCell(2, 1);
-    t2.value = `Location: ${location}   ·   Month: ${month}   ·   Working days: ${workDays}   ·   Employees: ${emps.length}`;
+    t2.value = `Location: ${location}   ·   Month: ${month}   ·   Calendar days: ${calendarDays}   ·   Working days: ${workDays}   ·   Employees: ${emps.length}`;
     t2.font = { size: 11, color: { argb: "FF7A5C00" }, bold: true };
     t2.alignment = { horizontal: "center" };
 
