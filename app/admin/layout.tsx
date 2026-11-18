@@ -42,6 +42,7 @@ const navigation = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [moduleSearch, setModuleSearch] = useState('');
   const [user, setUser] = useState<{ name?: string; role?: string }>({});
   const pathname = usePathname();
   useEffect(() => {
@@ -57,6 +58,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [open]);
   if (pathname === '/admin/login') return <>{children}</>;
   const current = navigation.flatMap(group => group.items).find(item => item.path === pathname)?.name || 'Workspace';
+  const query = moduleSearch.trim().toLowerCase();
+  const visibleGroups = navigation.map(group => ({
+    label: group.label,
+    items: group.items.filter(item =>
+      (!('roles' in item) || item.roles?.includes(user.role || '')) &&
+      (item.name.toLowerCase().includes(query) || group.label.toLowerCase().includes(query))
+    ),
+  })).filter(group => group.items.length);
   const initials = (user.name || 'HR').split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase();
   async function logout() { if (confirm('Sign out of your workspace?')) await signOut({ callbackUrl: '/admin/login' }); }
   return <div className="hrms-ui hrms-shell">
@@ -67,15 +76,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <CompanyLogo size={44} />
         <span>Sachin Security<small>SECURITY OPERATIONS</small></span>
       </Link>
-      <div className="hrms-sidebar-caption">People. Posts. Protection.</div>
+      <label className="hrms-module-search">
+        <Search size={16} aria-hidden="true" />
+        <input type="search" aria-label="Find a module" placeholder="Find a module" value={moduleSearch} onChange={event => setModuleSearch(event.target.value)} />
+      </label>
       <nav aria-label="Main navigation" className="hrms-navigation">
-        {navigation.map(group => {
-          const items = group.items.filter(item => !('roles' in item) || item.roles?.includes(user.role || ''));
-          return <div key={group.label} className="hrms-nav-group"><p>{group.label}</p>{items.map(item => {
+        {!visibleGroups.length && <p className="p-3 text-sm" role="status">No matching modules.</p>}
+        {visibleGroups.map(group => (
+          <div key={group.label} className="hrms-nav-group"><p>{group.label}</p>{group.items.map(item => {
             const active = pathname === item.path || (item.path !== '/admin' && pathname.startsWith(item.path + '/'));
-            return <Link href={item.path} key={item.path} aria-current={active ? 'page' : undefined} className={`hrms-nav-link ${active ? 'is-active' : ''}`} onClick={() => setOpen(false)}><item.icon size={18} /><span>{item.name}</span>{active && <ChevronRight size={14} />}</Link>;
-          })}</div>;
-        })}
+            return <Link href={item.path} key={item.path} aria-current={active ? 'page' : undefined} className={`hrms-nav-link ${active ? 'is-active' : ''}`} onClick={() => { setOpen(false); setModuleSearch(''); }}><item.icon size={18} /><span>{item.name}</span>{active && <ChevronRight size={14} />}</Link>;
+          })}</div>
+        ))}
       </nav>
       <div className="hrms-sidebar-bottom"><ShieldCheck size={17} /><span>Sachin Security Services<small>People at the heart of every day.</small></span></div>
     </aside>

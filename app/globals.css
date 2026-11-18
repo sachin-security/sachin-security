@@ -185,3 +185,116 @@ input[type="number"] {
 @media (max-width: 767px) { .guard-panel { padding: 18px; } .guard-info-card { padding: 18px; } .hrms-portal-brand { font-size: 12px; } .hrms-portal-brand small { font-size: 7px; letter-spacing: 1px; } }
 
 .visio-credit{padding:18px 24px;background:#f5f6f7;border-top:1px solid #e5e7eb;display:flex;justify-content:center}.visio-credit a{display:inline-flex;align-items:center;gap:10px;color:#52525b;font-size:12px;text-decoration:none}.visio-credit a:hover strong{color:#ab1e2b}.visio-credit a:focus-visible{outline:2px solid #ab1e2b;outline-offset:5px}.visio-credit img{object-fit:contain}.visio-credit strong{display:block;letter-spacing:.08em;font-size:12px;color:#202023}
+
+/* HRMS workspace and mobile navigation */
+.hrms-ui {
+  --hrms-navy: #20253a;
+  --hrms-ink: #23283b;
+  --hrms-muted: #596379;
+  --hrms-line: #e1e5ef;
+  --hrms-accent: #a51f38;
+  --hrms-accent-soft: #fbeef1;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.hrms-shell, .hrms-portal { background: #f2f4fa; }
+.hrms-sidebar { background: #fff; border-right: 1px solid var(--hrms-line); color: var(--hrms-ink); }
+.hrms-brand { color: var(--hrms-navy); padding-bottom: 22px; }
+.hrms-brand small { color: var(--hrms-accent); }
+.hrms-nav-group > p { color: var(--hrms-muted); font-size: 10px; }
+.hrms-sidebar .hrms-nav-link { color: #46516a; min-height: 42px; }
+.hrms-sidebar .hrms-nav-link:hover, .hrms-sidebar .hrms-nav-link.is-active {
+  background: var(--hrms-accent-soft);
+  color: var(--hrms-accent);
+}
+.hrms-sidebar-bottom { border-color: var(--hrms-line); color: var(--hrms-muted); }
+.hrms-sidebar-bottom small { color: var(--hrms-muted); }
+.hrms-sidebar-bottom > svg { color: var(--hrms-accent); }
+.hrms-module-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 14px;
+  padding: 0 12px;
+  min-height: 42px;
+  border: 1px solid var(--hrms-line);
+  border-radius: 9px;
+  background: #f5f7fc;
+  color: var(--hrms-muted);
+}
+.hrms-module-search input { width: 100%; min-width: 0; outline-offset: 2px; }
+.hrms-topbar, .hrms-portal-header-inner { min-height: 68px; }
+.hrms-breadcrumb { font-size: 13px; }
+.hrms-hero {
+  background: linear-gradient(115deg, #242943, #433459 68%, #702e47);
+  box-shadow: 0 10px 30px #2225481a;
+  padding: clamp(20px, 3.2vw, 42px);
+}
+.hrms-hero h1 { color: #fff; font-weight: 680; }
+.hrms-hero p { color: #ece6f2; font-size: 14px; }
+.hrms-hero-link { min-height: 44px; background: #fff; color: #582441; font-size: 13px; }
+.hrms-hero-link:hover { background: #fcebf0; }
+.hrms-login-story { background: linear-gradient(145deg, #22263d, #3f3252 68%, #702e47); }
+.hrms-login-form-side { background: #fff; }
+.hrms-login-input { font-size: 16px; }
+.hrms-stat-card, .hrms-action-card, .hrms-attendance-card { box-shadow: 0 3px 10px #23325b08; }
+.hrms-action-card strong, .hrms-action-card p { font-size: 14px; }
+.hrms-action-card p { color: var(--hrms-muted); font-size: 12px; }
+.hrms-content :where(th, td) { font-size: 13px; }
+.hrms-content :where(th) { color: #4b566f; }
+.hrms-content :where(thead) { background: #edf1f9; }
+.hrms-content :where([class*="overflow-x-auto"]) { max-width: 100%; }
+.hrms-portal-links a { color: #46516a; font-size: 12px; white-space: nowrap; }
+.hrms-portal-header-inner { max-width: 1440px; }
+.hrms-portal-menu, .hrms-mobile-dock, .hrms-portal-mobile { display: none; }
+
+@media (max-width: 1199px) {
+  .hrms-portal-links { display: none; }
+  .hrms-portal-menu { display: grid; place-items: center; min-height: 44px; min-width: 44px; }
+  .hrms-portal-mobile:not([hidden]) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px;
+    overflow-y: auto;
+    max-height: 52dvh;
+    background: white;
+  }
+  .hrms-portal { padding-bottom: calc(66px + env(safe-area-inset-bottom)); }
+  .hrms-mobile-dock {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    position: fixed;
+    z-index: 39;
+    inset: auto 0 0;
+    padding: 5px 8px calc(5px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--hrms-line);
+    background: #fff;
+    box-shadow: 0 -3px 18px #22254812;
+  }
+  .hrms-mobile-dock :is(a, button) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 52px;
+    border-radius: 9px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #46516a;
+  }
+  .hrms-mobile-dock :is([aria-current=page], [aria-expanded=true]) {
+    background: var(--hrms-accent-soft);
+    color: var(--hrms-accent);
+  }
+}
+
+@media (max-width: 1023px) {
+  .hrms-sidebar { visibility: hidden; }
+  .hrms-sidebar.is-open { visibility: visible; }
+}
+
+@media (max-width: 767px) {
+  .hrms-content :is(input, select, textarea):not([type=checkbox], [type=radio]) { font-size: 16px; }
+  .hrms-signout { min-width: 44px; min-height: 44px; }
+}

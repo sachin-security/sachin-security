@@ -33,8 +33,8 @@ export default function AdminDashboard() {
      
       
       if (jobsData.success && employeesData.success && applicantsData.success && messagesData.success) {
-        const activeJobs = jobsData.data.filter((job: any) => job.status === 'Active').length;
-        const newMessages = messagesData.data.filter((msg: any) => msg.status === 'New').length;
+        const activeJobs = jobsData.data.filter((job: { status?: string }) => job.status === 'Active').length;
+        const newMessages = messagesData.data.filter((message: { status?: string }) => message.status === 'New').length;
         
         setStats({
           totalEmployees: employeesData.total ?? employeesData.count ?? 0,
@@ -147,7 +147,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="hrms-hero"><div><span className="hrms-eyebrow">PEOPLE & OPERATIONS</span><h1>Your team. At a glance.</h1><p>A connected view of your people and everyday operations.</p></div><Link href="/admin/attendance" className="hrms-hero-link">View attendance <ArrowUpRight size={16} /></Link></div>
+      <div className="hrms-hero"><div><h1>People & operations</h1><p>Manage attendance, recruitment and employee support.</p></div><Link href="/admin/attendance" className="hrms-hero-link">View attendance <ArrowUpRight size={16} /></Link></div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
@@ -176,9 +176,9 @@ export default function AdminDashboard() {
 
       {/* Operation Tiles */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tiles.map((tile, index) => (
+        {tiles.map((tile) => (
           <Link
-            key={index}
+            key={tile.href}
             href={tile.href}
             className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md hover:border-slate-300 transition-all relative"
           >
