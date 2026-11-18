@@ -23,6 +23,7 @@ const navigation = [
     { name: 'Knowledge base', icon: FileText, path: '/admin/knowledge', roles: ['admin', 'hr'] },
     { name: 'Leave management', icon: CalendarClock, path: '/admin/leave' },
     { name: 'Payroll', icon: Wallet, path: '/admin/payroll', roles: ['admin', 'hr'] },
+    { name: 'Compliance', icon: ShieldCheck, path: '/admin/compliance', roles: ['admin', 'hr'] },
     { name: 'Documents', icon: FileText, path: '/admin/documents' },
   ] },
   { label: 'Organisation', items: [
